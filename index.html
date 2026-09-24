@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07070d">
+<title>MOBIKIT PLT — Demo</title>
+<style>
+:root{--bg:#050509;--card:#0d0b14;--text:#f8f7ff;--muted:#aaa6bb;--line:#2d2146;--pink:#ff2bd6;--cyan:#00f6ff;--green:#55ff99}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}body{margin:0;min-width:320px;overflow-x:hidden;background:radial-gradient(circle at 15% 5%,#32105b 0,#090510 30%,#030307 75%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1180px,100%);margin:auto;padding:0 max(16px,env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.top{position:sticky;top:0;z-index:20;background:#050509e8;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);padding-top:env(safe-area-inset-top)}
+.nav{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;min-width:0}.mark{flex:0 0 42px;height:42px;display:grid;place-items:center;border:2px solid var(--cyan);border-radius:12px;transform:skew(-8deg);box-shadow:0 0 18px #00f6ff66,0 0 24px #ff2bd633;font-weight:1000;text-shadow:0 0 10px var(--pink)}.logo{margin-left:10px;font-weight:900;letter-spacing:.1em;white-space:nowrap}.links{display:flex;gap:8px}.pill{border:1px solid #493064;padding:9px 12px;border-radius:999px;font-size:13px;background:#100c19}
+.mainnav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;border-top:1px solid #17111f;border-bottom:1px solid var(--line);padding:8px 0}.mainnav::-webkit-scrollbar{display:none}.navbtn{flex:0 0 auto;border:0;background:transparent;color:#c9c5d6;padding:11px 14px;border-radius:10px;cursor:pointer}.navbtn.active{background:#211234;color:#fff;box-shadow:inset 0 -2px var(--cyan)}
+.page{display:none;min-height:62vh}.page.active{display:block}.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center;min-height:530px;padding:44px 0}.eyebrow{color:var(--cyan);font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;text-shadow:0 0 10px #00f6ff}.hero h1{font-size:clamp(48px,8vw,96px);line-height:.88;letter-spacing:-.065em;margin:16px 0}.hero p,.muted{color:var(--muted);line-height:1.6}.hero p{font-size:18px;max-width:620px}.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.btn{display:inline-flex;justify-content:center;align-items:center;min-height:48px;border:0;border-radius:12px;padding:13px 18px;background:linear-gradient(90deg,var(--pink),#9e2cff);color:#fff;font-weight:850;cursor:pointer;box-shadow:0 0 22px #ff2bd633}.btn.alt{background:#11101a;border:1px solid #443166;box-shadow:none}
+.visual{width:min(100%,440px);aspect-ratio:1;border:1px solid #3c2862;border-radius:30px;background:linear-gradient(145deg,#19122b,#07070d);display:grid;place-items:center;box-shadow:0 0 55px #ff2bd61c}.phone{width:48%;height:72%;border:5px solid #5a3d85;border-radius:30px;background:linear-gradient(160deg,#2b1640,#05050a);display:grid;place-items:center;color:var(--cyan);font-weight:900;letter-spacing:.1em;box-shadow:0 0 30px #00f6ff44}
+.promo{margin:22px 0;padding:24px;border:1px solid #ff2bd666;border-radius:22px;background:linear-gradient(100deg,#270b34,#0c1025);display:flex;justify-content:space-between;align-items:center;gap:20px}.promo strong{display:block;font-size:clamp(30px,5vw,54px);text-transform:uppercase;text-shadow:0 0 16px var(--pink)}
+.section{padding:56px 0}.section h2{font-size:clamp(32px,5vw,46px);margin:6px 0 12px}.grid,.catalog{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:26px}.card,.product{border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#100d19,#08080e);overflow:hidden}.card{padding:24px}.pic{height:190px;display:grid;place-items:center;background:linear-gradient(135deg,#20143b,#090910);color:#777;font-weight:800}.productbody{padding:18px}.price{color:var(--green);font-size:21px;font-weight:900}.product button{width:100%;margin-top:12px;min-height:46px;border:0;border-radius:10px;background:#26163b;color:#fff;font-weight:800;cursor:pointer}
+.cartrow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}.badge{display:inline-grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:999px;background:var(--pink);font-size:12px;font-weight:900}.contact{display:grid;grid-template-columns:1fr 1fr;gap:16px}.footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);display:flex;justify-content:space-between;gap:18px}
+@media(max-width:820px){.links{display:none}.hero{grid-template-columns:1fr;min-height:0;padding:34px 0}.visual{margin:auto}.grid,.catalog{grid-template-columns:repeat(2,minmax(0,1fr))}.promo{align-items:flex-start;flex-direction:column}}
+@media(max-width:560px){.wrap{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}.nav{min-height:60px}.mark{width:38px;flex-basis:38px;height:38px}.logo{font-size:16px}.mainnav{margin:0 -12px;padding-left:12px;padding-right:12px}.navbtn{min-height:44px}.hero h1{font-size:clamp(43px,15vw,68px)}.hero p{font-size:16px}.buttons .btn{width:100%}.visual{border-radius:22px}.promo{padding:20px}.section{padding:42px 0}.grid,.catalog,.contact{grid-template-columns:1fr}.pic{height:210px}.footer{flex-direction:column}.cartrow{align-items:flex-start;flex-direction:column}}
+@media(hover:hover){.pill:hover,.navbtn:hover{border-color:var(--cyan);filter:brightness(1.12)}.product button:hover{background:#3a2058}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+<nav class="nav"><div class="brand"><div class="mark">M</div><div class="logo">MOBIKIT PLT</div></div><div class="links"><a class="pill" href="tel:+380937200512">093 720 05 12</a><a class="pill" href="https://www.instagram.com/mobikit_plt/" target="_blank" rel="noopener">Instagram</a><a class="pill" href="https://www.tiktok.com/@mobikit.plt" target="_blank" rel="noopener">TikTok</a></div></nav>
+<nav class="mainnav" aria-label="Основна навігація">
+<button class="navbtn" data-page="home">Головна</button><button class="navbtn" data-page="products">Товари</button><button class="navbtn" data-page="promos">Акції тижня</button><button class="navbtn" data-page="account">Кабінет</button><button class="navbtn" data-page="cart">Кошик <span class="badge" id="cartCount">0</span></button>
+</nav></div></div>
+<main class="wrap">
+<section id="home" class="page">
+<div class="promo"><div><div class="eyebrow">HOT • THIS WEEK</div><strong>Акції тижня</strong><span class="muted">Спеціальні пропозиції MOBIKIT PLT</span></div><button class="btn" data-go="promos">Дивитися акції →</button></div>
+<div class="hero"><div><div class="eyebrow">MOBIKIT · PLT</div><h1>Твій<br>мобільний<br>простір.</h1><p>Демоверсія вебсайту MOBIKIT PLT: каталог, акції, клієнтський кабінет і кошик.</p><div class="buttons"><a class="btn" href="https://www.instagram.com/mobikit_plt/" target="_blank" rel="noopener">Instagram</a><a class="btn alt" href="https://www.tiktok.com/@mobikit.plt" target="_blank" rel="noopener">TikTok</a></div></div><div class="visual"><div class="phone">MOBIKIT</div></div></div>
+<div class="section"><div class="eyebrow">Про магазин</div><h2>MOBIKIT PLT</h2><div class="grid"><div class="card"><h3>📱 Соцмережі</h3><p class="muted">Новинки та контент у TikTok та Instagram.</p></div><div class="card"><h3>⚡ Акції</h3><p class="muted">Окремий розділ пропозицій тижня.</p></div><div class="card"><h3>📞 Контакти</h3><p><a href="tel:+380937200512">+380 93 720 05 12</a></p></div></div></div>
+</section>
+<section id="products" class="page"><div class="section"><div class="eyebrow">Каталог</div><h2>Товари</h2><p class="muted">Демо-картки. Реальні назви, фото та ціни мають додаватися через майбутню адмін-систему.</p><div class="catalog">
+<article class="product"><div class="pic">PRODUCT PHOTO</div><div class="productbody"><h3>Товар 1</h3><p class="muted">Демо-товар</p><div class="price">Ціна не вказана</div><button data-add="Товар 1">Додати в кошик</button></div></article>
+<article class="product"><div class="pic">PRODUCT PHOTO</div><div class="productbody"><h3>Товар 2</h3><p class="muted">Демо-товар</p><div class="price">Ціна не вказана</div><button data-add="Товар 2">Додати в кошик</button></div></article>
+<article class="product"><div class="pic">PRODUCT PHOTO</div><div class="productbody"><h3>Товар 3</h3><p class="muted">Демо-товар</p><div class="price">Ціна не вказана</div><button data-add="Товар 3">Додати в кошик</button></div></article>
+</div></div></section>
+<section id="promos" class="page"><div class="section"><div class="eyebrow">Weekly drops</div><h2>Акції тижня</h2><div class="grid"><div class="card"><h3>🔥 HOT DEAL</h3><p class="muted">Місце для акційного товару.</p></div><div class="card"><h3>⚡ FLASH</h3><p class="muted">Місце для короткої акції.</p></div><div class="card"><h3>🎁 BONUS</h3><p class="muted">Місце для бонусної пропозиції.</p></div></div></div></section>
+<section id="account" class="page"><div class="section"><div class="eyebrow">Customer area</div><h2>Клієнтський кабінет</h2><div class="grid"><div class="card"><h3>Вхід / реєстрація</h3><p class="muted">Демо-інтерфейс. Для реальних акаунтів потрібен сервер.</p></div><div class="card"><h3>Мої замовлення</h3><p class="muted">Тут буде історія замовлень.</p></div><div class="card"><h3>Профіль</h3><p class="muted">Тут будуть дані клієнта та адреси доставки.</p></div></div></div></section>
+<section id="cart" class="page"><div class="section"><div class="eyebrow">Checkout</div><h2>Кошик</h2><div class="card" id="cartItems"><p class="muted">Кошик порожній.</p></div><div class="buttons"><button class="btn" id="checkout">Оформити замовлення</button><button class="btn alt" id="clearCart">Очистити кошик</button></div></div></section>
+<div class="section"><div class="eyebrow">Контакти</div><h2>Зв'язатися</h2><div class="contact"><div class="card"><h3>Телефон</h3><a href="tel:+380937200512">+380 93 720 05 12</a></div><div class="card"><h3>Соцмережі</h3><p><a href="https://www.instagram.com/mobikit_plt/" target="_blank" rel="noopener">Instagram @mobikit_plt</a></p><p><a href="https://www.tiktok.com/@mobikit.plt" target="_blank" rel="noopener">TikTok @mobikit.plt</a></p></div></div></div>
+<footer class="footer"><span>© MOBIKIT PLT</span><span>Demo • responsive</span></footer>
+</main>
+<script>
+(function(){
+"use strict";
+const valid=["home","products","promos","account","cart"];let cart=[];
+function go(id,push=true){if(!valid.includes(id))id="home";document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===id));if(push&&location.hash!=="#"+id)history.pushState(null,"","#"+id);window.scrollTo(0,0)}
+function render(){document.getElementById("cartCount").textContent=cart.length;const box=document.getElementById("cartItems");box.innerHTML=cart.length?cart.map((x,i)=>'<div class="cartrow"><strong>'+x+'</strong><button class="btn alt" data-remove="'+i+'">Видалити</button></div>').join(""):'<p class="muted">Кошик порожній.</p>';box.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{cart.splice(Number(b.dataset.remove),1);render()})}
+document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>go(b.dataset.page));
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
+document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{cart.push(b.dataset.add);render()});
+document.getElementById("clearCart").onclick=()=>{cart=[];render()};
+document.getElementById("checkout").onclick=()=>alert(cart.length?"Демо: товари готові до оформлення. Для реального замовлення потрібен backend.":"Спочатку додайте товар у кошик.");
+window.addEventListener("hashchange",()=>go(location.hash.slice(1),false));
+go(location.hash.slice(1)||"home",false);render();
+})();
+</script>
+</body></html>
