@@ -230,8 +230,8 @@ function sortedProducts(list,mode){
  const a=[...list];
  if(mode==="az")a.sort((x,y)=>x.name.localeCompare(y.name,"uk"));
  if(mode==="za")a.sort((x,y)=>y.name.localeCompare(x.name,"uk"));
- if(mode==="priceAsc")a.sort((x,y)=>x.price-y.price);
- if(mode==="priceDesc")a.sort((x,y)=>y.price-x.price);
+ if(mode==="priceAsc")a.sort((x,y)=>currentPrice(x.id)-currentPrice(y.id));
+ if(mode==="priceDesc")a.sort((x,y)=>currentPrice(y.id)-currentPrice(x.id));
  if(mode==="popular")a.sort((x,y)=>y.popularity-x.popularity);
  if(mode==="new")a.sort((x,y)=>new Date(y.createdAt)-new Date(x.createdAt));
  return a;
