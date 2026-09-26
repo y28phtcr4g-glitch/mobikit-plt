@@ -188,7 +188,7 @@ const categoryNames={cases:"Чохли на телефон",speakers:"Порта
 const valid=["home","products","promos","account","cart","category"];
 let currentCategory="";
 let cart=[];
-try{cart=JSON.parse(localStorage.getItem("mobikitCart")||"[]");if(!Array.isArray(cart))cart=[];cart=cart.filter(x=>x&&PRODUCTS.some(p=>p.id===x.id)&&Number.isFinite(Number(x.qty))&&Number(x.qty)>0).map(x=>({id:x.id,qty:Math.max(1,Math.floor(Number(x.qty)))}))}catch(e){cart=[]}
+try{cart=JSON.parse(localStorage.getItem("mobikitCart")||"[]");if(!Array.isArray(cart))cart=[];cart=cart.filter(x=>x&&PRODUCTS.some(p=>p.id===x.id)&&Number.isFinite(Number(x.qty))&&Number(x.qty)>0).map(x=>({id:x.id,qty:Math.max(1,Math.floor(Number(x.qty))),variantKey:typeof x.variantKey==="string"?x.variantKey:""}))}catch(e){cart=[]}
 let favorites=[];
 try{favorites=JSON.parse(localStorage.getItem("mobikitFavorites")||"[]");if(!Array.isArray(favorites))favorites=[]}catch(e){favorites=[]}
 
