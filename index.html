@@ -258,7 +258,7 @@ function lineKey(id,key){return id+"::"+(key||"")}
 const WAIT_KEY="mobikitWaitlist";
 function waitOwner(){const a=getDemoAccount&&getDemoAccount();return accountKey(a)}
 function storedRecord(x){return !!x&&typeof x==="object"&&!Array.isArray(x)}function randomToken(bytes=6){try{const a=new Uint8Array(bytes);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("")}catch(e){return Date.now().toString(36)+Math.random().toString(36).slice(2)}}
-function getWaitlist(){if(CLOUD_MODE)return cloudWaiting.map(x=>({...x}));try{const x=JSON.parse(localStorage.getItem(WAIT_KEY)||"[]"),seen=new Set();return Array.isArray(x)?x.filter(w=>{if(!storedRecord(w)||typeof w.id!=="string"||typeof w.key!=="string"||typeof w.owner!=="string"||seen.has(w.key))return false;const p=PRODUCTS.find(y=>y.id===w.id);if(!isCatalogVisible(p))return false;const vk=typeof w.variantKey==="string"?w.variantKey:"",vars=variantsFor(w.id);if(vars.length&&!variantByKey(w.id,vk))return false;seen.add(w.key);return true}):[]}catch(e){return[]}}
+function getWaitlist(){if(CLOUD_MODE)return cloudWaiting.map(x=>({...x}));try{const x=JSON.parse(localStorage.getItem(WAIT_KEY)||"[]"),seen=new Set();return Array.isArray(x)?x.slice(0,100).filter(w=>{if(!storedRecord(w)||typeof w.id!=="string"||typeof w.key!=="string"||typeof w.owner!=="string"||seen.has(w.key))return false;const p=PRODUCTS.find(y=>y.id===w.id);if(!isCatalogVisible(p))return false;const vk=typeof w.variantKey==="string"?w.variantKey:"",vars=variantsFor(w.id);if(vars.length&&!variantByKey(w.id,vk))return false;seen.add(w.key);return true}):[]}catch(e){return[]}}
 async function saveWaitlist(x){if(CLOUD_MODE)return cloudSavePrefs("waiting",x);try{localStorage.setItem(WAIT_KEY,JSON.stringify(x));return true}catch(e){notify("Не вдалося зберегти очікування у браузері 😿");return false}}
 function waitLine(id,key){return lineKey(id,key)+"::"+waitOwner()}
 function isWaiting(id,key){const k=waitLine(id,key);return getWaitlist().some(x=>x.key===k)}
@@ -272,7 +272,7 @@ let currentCategory="";
 let cart=[];
 try{
  const raw=JSON.parse(localStorage.getItem("mobikitCart")||"[]"),merged=new Map();
- if(Array.isArray(raw))raw.forEach(x=>{
+ if(Array.isArray(raw))raw.slice(0,100).forEach(x=>{
   if(!storedRecord(x)||typeof x.id!=="string")return;
   const p=PRODUCTS.find(y=>y.id===x.id);if(!isCatalogVisible(p))return;
   const key=typeof x.variantKey==="string"?x.variantKey:"",vars=variantsFor(p.id);
@@ -284,9 +284,11 @@ try{
 }catch(e){cart=[]}
 let favorites=[];
 function favoritesStorageKey(){const a=getDemoAccount&&getDemoAccount(),k=accountKey(a);return k?"mobikitFavorites::"+k:""}
-function loadFavorites(){if(CLOUD_MODE){favorites=[...cloudFavorites];return favorites}const key=favoritesStorageKey();if(!key){favorites=[];return favorites}try{let x=JSON.parse(localStorage.getItem(key)||"null");if(!Array.isArray(x)){const legacy=JSON.parse(localStorage.getItem("mobikitFavorites")||"[]");x=Array.isArray(legacy)?legacy:[];localStorage.setItem(key,JSON.stringify(x));localStorage.removeItem("mobikitFavorites")}favorites=[...new Set(x.filter(id=>typeof id==="string"&&PRODUCTS.some(p=>p.id===id&&isCatalogVisible(p))))]}catch(e){favorites=[]}return favorites}
+function loadFavorites(){if(CLOUD_MODE){favorites=[...cloudFavorites];return favorites}const key=favoritesStorageKey();if(!key){favorites=[];return favorites}try{let x=JSON.parse(localStorage.getItem(key)||"null");if(!Array.isArray(x)){const legacy=JSON.parse(localStorage.getItem("mobikitFavorites")||"[]");x=Array.isArray(legacy)?legacy:[];localStorage.setItem(key,JSON.stringify(x));localStorage.removeItem("mobikitFavorites")}favorites=[...new Set(x.slice(0,100).filter(id=>typeof id==="string"&&PRODUCTS.some(p=>p.id===id&&isCatalogVisible(p))))]}catch(e){favorites=[]}return favorites}
 
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function safeImageUrl(value){const v=String(value||"").trim();if(/^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i.test(v))return v;try{const u=new URL(v,location.href);return u.protocol==="https:"?u.href:""}catch(e){return""}}
+
 document.addEventListener("error",e=>{const img=e.target;if(!(img instanceof HTMLImageElement)||!img.hasAttribute("data-safe-img"))return;const parent=img.parentElement;img.remove();if(parent&&!parent.textContent.trim())parent.textContent="📦"},true);
 const money=n=>new Intl.NumberFormat("uk-UA").format(n)+" ₴";
 function promoTime(v){if(!v)return null;const t=new Date(v).getTime();return Number.isFinite(t)?t:null}
@@ -433,7 +435,7 @@ renderCart();renderFavorites();renderOrders();renderPromos();route();
 
 const ACCOUNT_DEMO_KEY="mobikitDemoAccount";
 const PROFILE_DEMO_KEY="mobikitDemoProfiles";
-function getDemoProfiles(){if(CLOUD_MODE)return [];try{const data=JSON.parse(localStorage.getItem(PROFILE_DEMO_KEY)||"[]");return Array.isArray(data)?data.filter(p=>storedRecord(p)&&typeof p.profileId==="string"&&(typeof p.phone==="string"||typeof p.email==="string")):[]}catch(e){return[]}}
+function getDemoProfiles(){if(CLOUD_MODE)return [];try{const data=JSON.parse(localStorage.getItem(PROFILE_DEMO_KEY)||"[]");return Array.isArray(data)?data.slice(-50).filter(p=>storedRecord(p)&&typeof p.profileId==="string"&&(typeof p.phone==="string"||typeof p.email==="string")):[]}catch(e){return[]}}
 function profileMatches(p,login){return login.includes("@")?(p.email||"").trim().toLowerCase()===login.toLowerCase():!!p.phone&&normalizePhone(p.phone)===normalizePhone(login)}
 async function saveDemoProfile(a){if(CLOUD_MODE)return cloudSaveProfile(a);
  const profiles=getDemoProfiles();a.profileId=a.profileId||"DP-"+Date.now().toString(36)+"-"+randomToken(4);
@@ -444,7 +446,7 @@ async function saveDemoProfile(a){if(CLOUD_MODE)return cloudSaveProfile(a);
 let accountMode="login";
 function getDemoAccount(){if(CLOUD_MODE)return cloudAccount?{...cloudAccount}:null;try{const a=JSON.parse(sessionStorage.getItem(ACCOUNT_DEMO_KEY)||"null");return storedRecord(a)?a:null}catch(e){return null}}
 function setAuthMode(mode){clearFormErrors(document.getElementById("accountAuthForm"));accountMode=mode;const reg=mode==="register";document.getElementById("authNameWrap").hidden=!reg;document.getElementById("authTitle").textContent=reg?"Ставай нашим котиком 😼":"Мяу, хто тут?";document.getElementById("authSubmit").textContent=reg?"Створити акаунт 🐾":"Увійти 🐾";document.getElementById("authLoginTab").classList.toggle("alt",reg);document.getElementById("authRegisterTab").classList.toggle("alt",!reg)}
-function renderProfileAvatar(a){const el=document.getElementById("profileAvatar");if(!el)return;el.innerHTML=a?.avatarImage?'<img src="'+esc(a.avatarImage)+'" alt="Фото профілю">':esc(a?.avatarCat||"😼");document.querySelectorAll("[data-avatar-cat]").forEach(b=>b.classList.toggle("active",(a?.avatarCat||"😼")===b.dataset.avatarCat&&!a?.avatarImage))}
+function renderProfileAvatar(a){const el=document.getElementById("profileAvatar");if(!el)return;const avatar=safeImageUrl(a?.avatarImage);el.innerHTML=avatar?'<img src="'+esc(avatar)+'" alt="Фото профілю" referrerpolicy="no-referrer" data-safe-img="1">':esc(a?.avatarCat||"😼");document.querySelectorAll("[data-avatar-cat]").forEach(b=>b.classList.toggle("active",(a?.avatarCat||"😼")===b.dataset.avatarCat&&!a?.avatarImage))}
 function renderAccount(){resetCheckoutIdentity();const a=getDemoAccount(),guest=document.getElementById("accountGuest"),member=document.getElementById("accountMember");guest.hidden=!!a;member.hidden=!a;const guestOrders=document.getElementById("cloudGuestOrders");if(guestOrders)guestOrders.hidden=!!a;if(!a){favorites=[];["ordersCount","favoritesCount","waitingCount"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="0"});["ordersContent","favoritesContent","waitingContent"].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=""});if(CLOUD_MODE)renderOrders();return;}loadFavorites();document.getElementById("accountGreeting").textContent="З поверненням, "+(a.name||"котик")+" 🐾";document.getElementById("profileName").value=a.name||"";document.getElementById("profilePhone").value=a.phone||"";document.getElementById("profileEmail").value=a.email||"";document.getElementById("profileBirthday").value=a.birthday||"";renderProfileAvatar(a);renderFavorites();renderWaiting();renderOrders()}
 document.getElementById("authLoginTab").onclick=()=>setAuthMode("login");
 document.getElementById("authRegisterTab").onclick=()=>setAuthMode("register");
