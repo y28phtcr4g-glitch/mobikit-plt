@@ -17,7 +17,7 @@ if n<>1 then raise exception 'QA: other profile visible';end if;
 update public.mk_profiles set name='Зміна Чужого' where user_id='00000000-0000-4000-8000-000000000002';
 get diagnostics n=row_count;
 if n<>0 then raise exception 'QA: other profile update';end if;
-o=public.mk_create_order('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000012','{"payment":"pickup","buyerName":"Чуже Ім’я","buyerPhone":"+380990000099","items":[{"id":"case-carbon","qty":1}]}');
+o=public.mk_create_order('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000012','{"payment":"pickup","buyerName":"Чуже Ім’я","buyerPhone":"+380990000099","items":[{"id":"walker-wts67","qty":1}]}');
 if o->>'buyerPhone'<>'+380990000011' or o->>'ownerKey'<>'00000000-0000-4000-8000-000000000001' then raise exception 'QA: spoofed owner';end if;
 end $$;
 reset role;
@@ -30,7 +30,7 @@ begin
 select count(id) into n from public.mk_orders;
 if n<>0 or public.mk_list_orders()<>'[]'::jsonb then raise exception 'QA: foreign order visible';end if;
 begin
-perform public.mk_create_order('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000012','{"payment":"pickup","items":[{"id":"case-carbon","qty":1}]}');
+perform public.mk_create_order('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000012','{"payment":"pickup","items":[{"id":"walker-wts67","qty":1}]}');
 exception when others then failed=true;end;
 if not failed then raise exception 'QA: cross-user retry accepted';end if;
 end $$;
