@@ -9,12 +9,12 @@ begin
  raise exception 'QA: invalid order accepted: %',v;
 end $$;
 do $$
-declare base jsonb='{"payment":"pickup","buyerName":"Тест Перевірка","buyerPhone":"+380990000001","items":[{"id":"case-carbon","qty":1,"unitPrice":1}],"total":1}';
+declare base jsonb='{"payment":"pickup","buyerName":"Тест Перевірка","buyerPhone":"+380990000001","items":[{"id":"walker-wts67","qty":1,"unitPrice":1}],"total":1}';
 req uuid=gen_random_uuid(); tok uuid=gen_random_uuid(); first_order jsonb; repeated jsonb; oid uuid; failed boolean; v jsonb;
 begin
 first_order=public.mk_create_order(req,tok,base);
 oid=(first_order->>'serverId')::uuid;
-if (first_order->>'total')::numeric<>449 or (first_order->'items'->0->>'unitPrice')::numeric<>449 then raise exception 'QA: price tampering accepted';end if;
+if (first_order->>'total')::numeric<>1399 or (first_order->'items'->0->>'unitPrice')::numeric<>1399 then raise exception 'QA: price tampering accepted';end if;
 insert into qa_results values('Server price ignores submitted price/total','PASS');
 repeated=public.mk_create_order(req,tok,base);
 if repeated<>first_order or (select count(*) from public.mk_orders where request_id=req)<>1 then raise exception 'QA: duplicate request';end if;
@@ -31,8 +31,9 @@ perform pg_temp.reject_order(jsonb_set(base,'{items}','[]'));
 perform pg_temp.reject_order(jsonb_set(base,'{items,0,qty}','-1'));
 perform pg_temp.reject_order(jsonb_set(base,'{items,0,qty}','1.5'));
 perform pg_temp.reject_order(jsonb_set(base,'{items}',base->'items'||base->'items'));
-perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"case-magsafe","variantKey":"iphone14-black","qty":1}]'));
+perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"cable-baseus-rapid-charge","variantKey":"2m-black","qty":1}]'));
 perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"cable-walker-power-silicone-100w","variantKey":"2m-white","qty":1}]'));
+perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"case-carbon","qty":1}]'));
 insert into qa_results values('Missing/empty items, negative/fractional/duplicate quantities, last/zero stock','PASS');
 update public.mk_orders set step=4 where id=oid;
 failed=false;
