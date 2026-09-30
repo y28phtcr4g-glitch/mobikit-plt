@@ -30,6 +30,40 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 .field-error{display:block;color:#ff9ab5;font-size:13px;line-height:1.5;margin-top:6px}[aria-invalid="true"]{border-color:#ff638e!important}.site-notice{position:fixed;z-index:500;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(540px,calc(100% - 24px));display:flex;gap:12px;align-items:center;padding:16px;border:1px solid var(--cyan);border-radius:16px;background:#141020;box-shadow:0 8px 32px #000b;line-height:1.5}.site-notice span{flex:1}.site-notice button{flex:none;width:44px;height:44px;border:1px solid #ffffff40;border-radius:10px;background:#211831;color:#fff;cursor:pointer}
 
 .cloud-confirm{color:var(--text,#f3f4f8);max-width:min(480px,calc(100vw - 32px));width:calc(100% - 32px);box-sizing:border-box;overflow-wrap:anywhere}.cloud-confirm::backdrop{background:rgba(0,0,0,.65)}
+
+/* Mobile account polish */
+@media(max-width:600px){
+  .top .wrap{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+  .nav{min-height:62px;gap:8px}
+  .brandimg{width:132px;height:50px}
+  .logo{margin-left:8px;font-size:15px;letter-spacing:.08em}
+  .social-trigger{padding:8px 10px;gap:5px}
+  .social-trigger span{font-size:15px}.social-trigger b{font-size:10px;letter-spacing:.8px}
+  .mainnav{margin:0 -10px;padding:7px 10px;gap:2px;overflow-x:auto;scroll-padding-inline:10px}
+  .navbtn{padding:10px 9px;font-size:13px;min-height:42px}
+  #account.section{padding-top:30px}
+  #account.section>h2{font-size:clamp(32px,10vw,42px);line-height:1.04;margin-top:10px}
+  .account-shell{margin-top:18px;gap:14px}
+  .account-side{padding:18px 14px;border-radius:20px}
+  .cat-avatar{width:70px;height:70px;font-size:36px;margin-bottom:10px}
+  .account-hello h3{font-size:18px;line-height:1.25;margin:4px 0}
+  .account-hello .muted{margin:2px 0;font-size:14px}
+  .account-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
+  .account-stat{min-width:0;padding:10px 4px;border-radius:12px;font-size:12px}
+  .account-stat b{font-size:20px}
+  .account-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:14px}
+  .account-tab{min-width:0;padding:11px 8px;font-size:13px;text-align:center;white-space:normal}
+  .account-panel{padding:17px 14px;border-radius:20px;min-height:320px}
+  .site-notice{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100% - 20px);padding:11px 12px;border-radius:14px;gap:8px;font-size:13px;line-height:1.4;max-height:34vh;overflow:auto}
+  .site-notice span{overflow-wrap:anywhere}.site-notice button{width:38px;height:38px}
+}
+@media(max-width:390px){
+  .logo{font-size:14px}.social-trigger{padding:7px 8px}.social-trigger b{font-size:9px}
+  .navbtn{padding:9px 8px;font-size:12px}
+  .account-side{padding-left:12px;padding-right:12px}
+  .account-stat{font-size:11px}.account-stat b{font-size:19px}
+}
+
 </style>
 </head>
 <body>
