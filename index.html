@@ -578,7 +578,9 @@ if(CLOUD_MODE){
  renderAccount();
  cloudReady=(async()=>{
   const {createClient}=await import("https://esm.sh/@supabase/supabase-js@2.117.2");
-  cloudClient=createClient("https://iobkeqfpwelvsntxqurt.supabase.co","sb_publishable_jMg1IOTqc9n4zCqE7Dp1VA_jYaPCMn5",{global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});
+  cloudClient=createClient("https://iobkeqfpwelvsntxqurt.supabase.co","sb_publishable_jMg1IOTqc9n4zCqE7Dp1VA_jYaPCMn5",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});
+  const callbackCode=new URLSearchParams(location.search).get("code");
+  if(callbackCode){const exchanged=await cloudClient.auth.exchangeCodeForSession(callbackCode);if(exchanged.error)throw exchanged.error;history.replaceState(null,"",location.pathname+"?cloud=1&qa=cloud")}
   const r=await cloudClient.auth.getSession();if(r.error)throw r.error;
   await cloudRestore(r.data.session);await cloudLoadCatalog();
   cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"||event==="SIGNED_IN"||event==="USER_UPDATED")setTimeout(()=>cloudRestore(session).catch(cloudError),0)});
