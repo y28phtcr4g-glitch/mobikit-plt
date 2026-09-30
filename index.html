@@ -269,7 +269,7 @@ function addCartProduct(id,key){const p=PRODUCTS.find(x=>x.id===id);if(!isCatalo
 const categoryNames={cases:"Чохли на телефон",speakers:"Портативні колонки",headphones:"Навушники",chargers:"Зарядні пристрої",holders:"Автотримачі",led:"Освітлення",projectors:"Проектори",styluses:"Стилуси",watches:"Смарт-годинники",powerbanks:"PowerBank",cables:"Кабелі",gadgets:"Гаджети",instantcameras:"Фотоапарати миттєвого друку",miniprinters:"Мініпринтери",fans:"Вентилятори",printing3d:"3D-друк"};
 const valid=["home","products","promos","account","cart","category"];
 let currentCategory="";
-let cart=[];
+function readStoredCart(){
 try{
  const raw=JSON.parse(localStorage.getItem("mobikitCart")||"[]"),merged=new Map();
  if(Array.isArray(raw))raw.slice(0,100).forEach(x=>{
@@ -280,8 +280,10 @@ try{
   const qty=Math.floor(Number(x.qty));if(!Number.isFinite(qty)||qty<1)return;
   const lk=lineKey(p.id,key),prev=merged.get(lk);merged.set(lk,{id:p.id,variantKey:key,qty:Math.min(99,(prev?.qty||0)+qty)})
  });
- cart=[...merged.values()];
-}catch(e){cart=[]}
+ return [...merged.values()];
+}catch(e){return []}
+}
+let cart=readStoredCart();
 let favorites=[];
 function favoritesStorageKey(){const a=getDemoAccount&&getDemoAccount(),k=accountKey(a);return k?"mobikitFavorites::"+k:""}
 function loadFavorites(){if(CLOUD_MODE){favorites=[...cloudFavorites];return favorites}const key=favoritesStorageKey();if(!key){favorites=[];return favorites}try{let x=JSON.parse(localStorage.getItem(key)||"null");if(!Array.isArray(x)){const legacy=JSON.parse(localStorage.getItem("mobikitFavorites")||"[]");x=Array.isArray(legacy)?legacy:[];localStorage.setItem(key,JSON.stringify(x));localStorage.removeItem("mobikitFavorites")}favorites=[...new Set(x.slice(0,100).filter(id=>typeof id==="string"&&PRODUCTS.some(p=>p.id===id&&isCatalogVisible(p))))]}catch(e){favorites=[]}return favorites}
@@ -593,6 +595,14 @@ if(CLOUD_MODE){
 }
 
 
+
+window.addEventListener("storage",e=>{
+ if(e.storageArea!==localStorage)return;
+ if(e.key==="mobikitCart"||e.key===null){
+  cart=readStoredCart();
+  renderCart();
+ }
+});
 
 })();
 </script>
