@@ -169,11 +169,12 @@ PRODUCTS.forEach(p=>{
 const PROMO_CONFIG={
   bannerImage:"",
   bannerTitle:"Акції тижня 🔥",
-  bannerText:"Тут будуть найгарячіші пропозиції MOBIKIT PLT.",
+  bannerText:"Обрані пропозиції MOBIKIT PLT на обмежений термін.",
   items:[
-    {id:"proove-nova-10w",salePrice:999},
-    {id:"proove-dreamer",salePrice:1099},
-    {id:"baseus-fm11",salePrice:1299}
+    // ДЕМО. У бойовій версії ці записи створюються вручну через адмінку.
+    {id:"proove-nova-10w",salePrice:999,published:true,startAt:"2026-09-29T09:00:00+03:00",endAt:"2026-10-06T21:00:00+03:00"},
+    {id:"proove-dreamer",salePrice:1099,published:true,startAt:"2026-09-30T09:00:00+03:00",endAt:"2026-10-05T21:00:00+03:00"},
+    {id:"baseus-fm11",salePrice:1299,published:false,startAt:"2026-09-30T09:00:00+03:00",endAt:"2026-10-07T21:00:00+03:00"}
   ]
 };
 
@@ -204,7 +205,11 @@ function loadFavorites(){const key=favoritesStorageKey();if(!key){favorites=[];r
 
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=n=>new Intl.NumberFormat("uk-UA").format(n)+" ₴";
-function activePromo(id){const offer=PROMO_CONFIG.items.find(x=>x.id===id);if(!offer||!Number.isFinite(offer.salePrice))return null;if(offer.endsAt&&Date.now()>=new Date(offer.endsAt).getTime())return null;return offer}function currentPrice(id){const p=PRODUCTS.find(x=>x.id===id);if(!p)return 0;const offer=activePromo(id);return offer?offer.salePrice:p.price}
+function promoTime(v){if(!v)return null;const t=new Date(v).getTime();return Number.isFinite(t)?t:null}
+function promoState(offer,now=Date.now()){if(!offer||offer.published!==true||!Number.isFinite(Number(offer.salePrice))||Number(offer.salePrice)<0)return "hidden";const start=promoTime(offer.startAt),end=promoTime(offer.endAt);if(start!==null&&end!==null&&end<=start)return "invalid";if(start!==null&&now<start)return "scheduled";if(end!==null&&now>=end)return "expired";return "active"}
+function activePromo(id){const offer=PROMO_CONFIG.items.find(x=>x.id===id);return promoState(offer)==="active"?offer:null}
+function promoDeadline(offer){const t=promoTime(offer.endAt);return t===null?"":new Date(t).toLocaleString("uk-UA",{dateStyle:"short",timeStyle:"short"})}
+function currentPrice(id){const p=PRODUCTS.find(x=>x.id===id);if(!p)return 0;const offer=activePromo(id);return offer?Number(offer.salePrice):p.price}
 
 function productCard(p){
  return '<article class="product"><button class="fav-btn '+(favorites.includes(p.id)?'active':'')+'" data-favorite="'+p.id+'" type="button" aria-label="Обране" title="Обране">'+(favorites.includes(p.id)?'♥':'♡')+'</button><div class="productpic" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.parentElement.insertAdjacentText(\'beforeend\',\''+p.icon+'\')">':p.icon)+'</div><div class="productbody"><div class="eyebrow">'+esc(categoryNames[p.category])+'</div><h3 data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="productmeta"><span class="price">'+money(currentPrice(p.id))+'</span><span class="demo-price">'+(currentPrice(p.id)!==p.price?"🔥 акція · ":"")+'демо-ціна для тесту</span></div><button data-add="'+p.id+'">Додати в кошик</button></div></article>';
@@ -266,10 +271,12 @@ function renderPromos(){
  document.getElementById("promoBannerTitle").textContent=PROMO_CONFIG.bannerTitle;
  document.getElementById("promoBannerText").textContent=PROMO_CONFIG.bannerText;
  if(PROMO_CONFIG.bannerImage){banner.style.backgroundImage='url("'+PROMO_CONFIG.bannerImage.replace(/"/g,"%22")+'")';banner.classList.add("has-image")}else{banner.style.backgroundImage="";banner.classList.remove("has-image")}
- const list=PROMO_CONFIG.items.map((offer,index)=>{const p=PRODUCTS.find(x=>x.id===offer.id);return p?{p,offer,index}:null}).filter(Boolean);
+ const list=PROMO_CONFIG.items.map((offer,index)=>{const p=PRODUCTS.find(x=>x.id===offer.id);return p&&promoState(offer)==="active"?{p,offer,index}:null}).filter(Boolean);
  const grid=document.getElementById("promoProducts"),empty=document.getElementById("promoEmpty");
- grid.innerHTML=list.map(({p,offer})=>{const pct=Math.max(0,Math.round((1-offer.salePrice/p.price)*100));return '<article class="product"><div class="productpic" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.parentElement.insertAdjacentText(\'beforeend\',\''+p.icon+'\')">':p.icon)+'</div><div class="productbody"><span class="sale-chip">🔥 АКЦІЯ'+(pct?' −'+pct+'%':'')+'</span><h3 data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="sale-prices"><span class="old-price">'+money(p.price)+'</span><span class="sale-price">'+money(offer.salePrice)+'</span></div><span class="demo-price">демо-ціни для тесту</span><button data-add="'+p.id+'">Додати в кошик</button></div></article>'}).join("");
- empty.hidden=!!list.length;grid.hidden=!list.length;bindAdd(grid);
+ grid.innerHTML=list.map(({p,offer})=>{const sale=Number(offer.salePrice),pct=p.price>sale?Math.round((1-sale/p.price)*100):0,until=promoDeadline(offer);return '<article class="product"><div class="productpic" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.parentElement.insertAdjacentText(\'beforeend\',\''+p.icon+'\')">':p.icon)+'</div><div class="productbody"><span class="sale-chip">🔥 АКЦІЯ'+(pct?' −'+pct+'%':'')+'</span><h3 data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="sale-prices"><span class="old-price">'+money(p.price)+'</span><span class="sale-price">'+money(sale)+'</span></div>'+(until?'<div class="muted" style="margin-top:7px">⏳ Діє до '+esc(until)+'</div>':'')+'<span class="demo-price">демо-ціни для тесту</span><button data-add="'+p.id+'">Додати в кошик</button></div></article>'}).join("");
+ empty.hidden=!!list.length;grid.hidden=!list.length;
+ if(!list.length)empty.innerHTML='<strong>Зараз активних акцій немає 😼</strong><p class="muted">Тут з’являться лише пропозиції, які магазин додасть вручну на визначений термін.</p>';
+ bindAdd(grid);
 }
 function renderCategory(){
  const list=sortedProducts(PRODUCTS.filter(p=>p.category===currentCategory),document.getElementById("productSort").value);
