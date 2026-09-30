@@ -91,11 +91,11 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 
 
 /* Keep long server order IDs from widening mobile cards */
-.order-code{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-code{max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 @media(max-width:600px){
   .order-head-main{min-width:0;width:100%}
   .order-head-main>div:last-child{min-width:0;max-width:100%}
-  .order-code{max-width:min(62vw,260px);font-size:10px;letter-spacing:.1em}
+  .order-code{max-width:min(62vw,260px);font-size:10px;letter-spacing:.1em;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 }
 
 </style>
