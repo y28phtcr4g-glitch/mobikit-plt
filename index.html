@@ -65,109 +65,35 @@ function clearFormErrors(form){form?.querySelectorAll("[aria-invalid]").forEach(
 const PRODUCTS=[
 {id:"case-magsafe",category:"cases",name:"MagSafe чохол",price:499,popularity:90,createdAt:"2026-09-25",icon:"📱",desc:"Чохол із магнітним кільцем MagSafe. Точну сумісність із моделями телефону уточнюй у магазині."},
 {id:"case-gleam-magnetic",category:"cases",name:"GLEAM Case with Magnetic Ring",price:549,popularity:84,createdAt:"2026-09-25",icon:"📱",desc:"Чохол GLEAM із Magnetic Ring. Сумісність залежить від моделі телефону."},
-{id:"case-carbon",category:"cases",name:"Carbon Fiber чохол",price:449,popularity:81,createdAt:"2026-09-25",icon:"📱",desc:"Чохол із карбоновим візерунком. Модель телефону уточнюй перед покупкою."},
-{id:"case-glitter",category:"cases",name:"Блискучий чохол зі стразами",price:499,popularity:78,createdAt:"2026-09-25",icon:"✨",desc:"Декоративний блискучий чохол зі стразами. Сумісність уточнюй у магазині."},
-{id:"case-nasa",category:"cases",name:"Чохол NASA / Space",price:449,popularity:76,createdAt:"2026-09-25",icon:"🚀",desc:"Дизайнерський чохол у космічній тематиці."},
-{id:"case-wave",category:"cases",name:"Чохол Wave",price:449,popularity:72,createdAt:"2026-09-25",icon:"🌊",desc:"Чорно-білий дизайнерський чохол із хвилястим принтом."},
-{id:"case-bear",category:"cases",name:"Чохол Bear",price:449,popularity:70,createdAt:"2026-09-25",icon:"🧸",desc:"Декоративний чохол із персонажем-ведмедиком."},
-{id:"case-pearlescent",category:"cases",name:"Перламутровий чохол",price:499,popularity:74,createdAt:"2026-09-25",icon:"🫧",desc:"Перламутровий дизайнерський чохол. Сумісність уточнюй у магазині."},
-{id:"case-plain",category:"cases",name:"Однотонний чохол",price:399,popularity:71,createdAt:"2026-09-25",icon:"📱",desc:"Однотонний чохол із наданих фото. Сумісність уточнюй у магазині."},
-{id:"case-mirror",category:"cases",name:"Дизайнерський дзеркальний чохол",price:499,popularity:75,createdAt:"2026-09-25",icon:"🪞",desc:"Дзеркальний дизайнерський чохол із наданих фото. Сумісність уточнюй у магазині."},
-{id:"case-white-glitter",category:"cases",name:"Білий блискучий чохол",price:499,popularity:77,createdAt:"2026-09-25",icon:"✨",desc:"Білий декоративний блискучий чохол із наданих фото. Сумісність уточнюй у магазині."},
 {id:"hoco-h86-dragon",category:"holders",name:"Hoco H86 Dragon",price:699,popularity:80,createdAt:"2026-09-25",icon:"🚗",desc:"Автомобільний тримач Hoco H86 Dragon із наданих матеріалів. Додаткові характеристики не вигадуємо."},
-{id:"remax-car-holder",category:"holders",name:"Автотримач Remax",price:699,popularity:76,createdAt:"2026-09-25",icon:"🚗",desc:"Автомобільний тримач Remax із наданого фото. Точний артикул на кадрі не читається, тому модель не вигадуємо."},
-{id:"camera-am300",category:"instantcameras",name:"Дитяча фотокамера AM300 «Звірятка»",price:1499,popularity:88,createdAt:"2026-09-25",icon:"📸",desc:"Миттєвий друк фото, фронтальна камера, фото та відео, рамки й ефекти, підтримка карти пам’яті, заряджання Type-C. Характеристики зі сторіс магазину."},
-{id:"camera-a23",category:"instantcameras",name:"Дитяча фотокамера A23",price:1499,popularity:87,createdAt:"2026-09-25",icon:"📸",desc:"Миттєвий друк, фронтальна камера, рамки, ефекти та фільтри, вбудовані ігри, карта пам’яті до 32 GB, Type-C. Характеристики зі сторіс магазину."},
-{id:"camera-ai9",category:"instantcameras",name:"Дитячий фотоапарат AI9",price:1599,popularity:90,createdAt:"2026-09-25",icon:"📸",desc:"Миттєвий друк без чорнила, камера обертається на 180°, 2-дюймовий екран, фото та відео Full HD, карта пам’яті до 32 GB. Характеристики зі сторіс магазину."},
-{id:"camera-m05",category:"instantcameras",name:"Дитяча фотокамера Animals M05",price:1499,popularity:89,createdAt:"2026-09-25",icon:"🐧",desc:"Миттєвий друк без чорнила, фронтальна камера, рамки, фільтри та ефекти, підтримка карти пам’яті, заряджання Type-C. Характеристики зі сторіс магазину."},
+{id:"baseus-gravity-car-mount",category:"holders",name:"Baseus Car Mount Tank Gravity",price:699,popularity:82,createdAt:"2026-09-25",icon:"🚗",desc:"Гравітаційний автомобільний тримач Baseus. На упаковці зазначені обертання 360°, телескопічна конструкція 21 см та регулювання кута."},
 {id:"camera-a26",category:"instantcameras",name:"Фотокамера A26",price:1599,popularity:91,createdAt:"2026-09-25",icon:"📸",desc:"Миттєвий друк, фронтальна камера, основна камера до 48 MP, microSD до 32 GB, вбудований акумулятор. Характеристики зі сторіс магазину."},
 {id:"camera-q5",category:"instantcameras",name:"Дитяча фотокамера Q5",price:1699,popularity:93,createdAt:"2026-09-25",icon:"📸",desc:"Фото та друк зі смартфона через Bluetooth + APP, термодрук на папері 57 мм, 2.4-дюймовий IPS-дисплей, рамки, стікери й малюнки, Type-C. Характеристики зі сторіс магазину."},
-{id:"printer-a8c-mini",category:"miniprinters",name:"Термопринтер A8C Mini",price:999,popularity:90,createdAt:"2026-09-25",icon:"🖨️",desc:"Друк зі смартфона через FunPrint, Bluetooth, термодрук без чорнила, фото, списки, конспекти, стікери та малюнки, вбудований акумулятор 1000 mAh. Характеристики зі сторіс магазину."},
 {id:"printer-d7-rabbit",category:"miniprinters",name:"Портативний термопринтер Mini D7 Rabbit",price:1099,popularity:92,createdAt:"2026-09-25",icon:"🐰",desc:"Android та iPhone через Bluetooth, друк текстів, фото, нотаток, чек-листів і стікерів, без чорнила, акумулятор 1000 mAh, Type-C. Характеристики зі сторіс магазину."},
 {id:"walker-wts67",category:"headphones",name:"Walker WTS-67 ANC+ENC",price:1399,popularity:95,createdAt:"2026-09-25",icon:"🎧",desc:"ANC+ENC, Bluetooth 5.4, до 6 годин роботи та до 50 годин із кейсом, Type-C або Qi."},
-{id:"walker-wts11",category:"headphones",name:"Walker WTS-11",price:899,popularity:80,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.0, до 4 годин роботи, сенсорне керування, мікрофон та LED-індикатор кейса."},
-{id:"remax-tws01",category:"headphones",name:"Remax TWS-01 Sleepy",price:999,popularity:82,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.4, до 5 годин музики або 6 годин розмов, Type-C."},
-{id:"onikuma-t18",category:"headphones",name:"Onikuma T18 Camera",price:1199,popularity:84,createdAt:"2026-09-25",icon:"🎧",desc:"До 6 годин роботи, IPX4, LED-індикатор заряду, мікрофон і підтримка Siri."},
-{id:"hoco-ea8",category:"headphones",name:"HOCO EA8",price:1099,popularity:79,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.4, до 6 годин роботи, керування через застосунок, відкрита clip-on конструкція."},
-{id:"hoco-ew87",category:"headphones",name:"HOCO EW87",price:1199,popularity:83,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.4, до 4 годин роботи, кейс із дисплеєм та керуванням."},
-{id:"hoco-ea4",category:"headphones",name:"HOCO EA4 OWS",price:1199,popularity:78,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.3, до 6 годин роботи, відкрита конструкція, кейс 500 mAh."},
-{id:"hoco-ew23",category:"headphones",name:"HOCO EW23",price:999,popularity:77,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.3, до 4 годин роботи, дальність до 10 м, поворотний кейс."},
-{id:"remax-openbuds-p9",category:"headphones",name:"Remax OpenBuds P9",price:1299,popularity:86,createdAt:"2026-09-25",icon:"🎧",desc:"Відкрита конструкція, Bluetooth 5.4, до 6 годин роботи, драйвер 14.2 мм."},
 {id:"proove-dreamer",category:"headphones",name:"Proove Dreamer",price:1399,popularity:92,createdAt:"2026-09-25",icon:"🎧",desc:"ANC, transparency, game mode, до 6 годин, застосунок Proove, IPX4."},
 {id:"proove-mello",category:"headphones",name:"Proove Mello",price:1299,popularity:94,createdAt:"2026-09-25",icon:"🎧",desc:"ANC, game mode, transparency, до 5 годин + кейс 400 mAh, IPX4, керування через застосунок."},
-{id:"rolling-face-tws",category:"headphones",name:"Rolling Face TWS",price:999,popularity:87,createdAt:"2026-09-25",icon:"🎧",desc:"Bluetooth 5.4, до 5 годин, Type-C, дальність до 15 м, кейс із трьома емоціями."},
 {id:"remax-ap10",category:"styluses",name:"Remax AP10",price:849,popularity:82,createdAt:"2026-09-25",icon:"✍️",desc:"LED-дисплей заряду, до 8 годин роботи, заряджання Type-C близько 30 хв."},
-{id:"hoco-gm111",category:"styluses",name:"HOCO GM111",price:349,popularity:68,createdAt:"2026-09-25",icon:"✍️",desc:"3 в 1: кулькова ручка, точний стилус із прозорим диском та силіконовий наконечник."},
-{id:"remax-ap08",category:"styluses",name:"Remax AP08",price:749,popularity:84,createdAt:"2026-09-25",icon:"✍️",desc:"Для iPhone, iPad та Android за даними сторіс, захист від випадкових дотиків, до 8 годин."},
-{id:"baseus-golden",category:"styluses",name:"Baseus Golden Cudgel Stylus Pen",price:399,popularity:78,createdAt:"2026-09-25",icon:"✍️",desc:"Прозорий наконечник для точних дотиків, з іншого боку — звичайна ручка."},
-{id:"baseus-smooth3",category:"styluses",name:"Baseus Smooth Writing 3",price:449,popularity:80,createdAt:"2026-09-25",icon:"✍️",desc:"Стилус, кулькова ручка та керування документами в одному аксесуарі."},
-{id:"proove-sp03",category:"styluses",name:"Proove SP-03",price:399,popularity:76,createdAt:"2026-09-25",icon:"✍️",desc:"Стилус для сенсорних екранів та гелева ручка, без заряджання."},
-{id:"proove-sp01",category:"styluses",name:"Proove SP-01",price:399,popularity:74,createdAt:"2026-09-25",icon:"✍️",desc:"Стилус для сенсорних екранів із силіконовими наконечниками з обох боків."},
 {id:"borofone-bg100",category:"styluses",name:"Borofone BG100",price:899,popularity:86,createdAt:"2026-09-25",icon:"✍️",desc:"Дисплей, захист від випадкових дотиків та підтримка нахилу."},
-{id:"remax-ap07",category:"styluses",name:"Remax AP07",price:799,popularity:90,createdAt:"2026-09-25",icon:"✍️",desc:"Стилус для iPad, точне письмо та малювання, до 8 годин роботи."},
-{id:"acefast-v1",category:"styluses",name:"Acefast V1",price:749,popularity:70,createdAt:"2026-09-25",icon:"✍️",desc:"Для сенсорних пристроїв, без Bluetooth; LED-рівень батареї та 2 змінні наконечники на упаковці."},
 {id:"xo-m8-pro",category:"watches",name:"XO M8 Pro",price:1499,popularity:91,createdAt:"2026-09-25",icon:"⌚",desc:"2.01” IPS, сповіщення, активність, до 3 днів активної роботи / до 15 днів очікування, IP67."},
-{id:"xo-m8-ultra",category:"watches",name:"XO M8 Ultra",price:1599,popularity:95,createdAt:"2026-09-25",icon:"⌚",desc:"Дзвінки, сповіщення, голосовий помічник, спорт, музика, погода та українське меню."},
 {id:"xo-watch4",category:"watches",name:"XO Watch 4",price:1699,popularity:88,createdAt:"2026-09-25",icon:"⌚",desc:"1.43” AMOLED, дзвінки, пульс, сатурація, спорт, IP68, до 5 днів."},
-{id:"gs-fenix7",category:"watches",name:"GS Fenix 7",price:1899,popularity:93,createdAt:"2026-09-25",icon:"⌚",desc:"Дзвінки, GPS-запис маршруту, тренування, до 7 днів, змінні циферблати."},
-{id:"hoco-y25",category:"watches",name:"HOCO Y25",price:999,popularity:73,createdAt:"2026-09-25",icon:"⌚",desc:"Сповіщення, моніторинг здоров’я та активності, до 7 днів."},
-{id:"hoco-y34",category:"watches",name:"HOCO Y34",price:1099,popularity:79,createdAt:"2026-09-25",icon:"⌚",desc:"Bluetooth-дзвінки, пульс, активність, спорт, IP67, до 5 днів."},
-{id:"projector-v8",category:"projectors",name:"V8 Projector",price:3999,popularity:90,createdAt:"2026-09-25",icon:"📽️",desc:"Full HD 1920×1080, Android 11, Wi‑Fi + Bluetooth, 240 люмен. Характеристики зі сторіс магазину."},
 {id:"hy300",category:"projectors",name:"HY300 Projector",price:2999,popularity:94,createdAt:"2026-09-25",icon:"📽️",desc:"Android 12, 1280×720, Wi‑Fi 2.4G/5G + Bluetooth, 16 GB, HDMI-IN, поворотний корпус 180°."},
-{id:"amx500",category:"projectors",name:"AMX500 Projector",price:3199,popularity:86,createdAt:"2026-09-25",icon:"📽️",desc:"Android 12, 1280×720, Wi‑Fi + Bluetooth, компактний корпус і пульт."},
 {id:"hoco-dt1",category:"projectors",name:"HOCO DT1",price:2799,popularity:84,createdAt:"2026-09-25",icon:"📽️",desc:"1280×720, екран 20–200 дюймів, Wi‑Fi 2.4G/5G + Bluetooth 5.0, HDMI/USB/AV, ручне фокусування."},
-{id:"alien-star-projector",category:"projectors",name:"Лазерний проектор зоряного неба «Інопланетянин»",price:999,popularity:88,createdAt:"2026-09-25",icon:"👽",desc:"Декоративний лазерний проектор зоряного неба у формі інопланетянина."},
 {id:"aimb-g1",category:"gadgets",name:"Smart AI Glasses AIMB-G1",price:2499,popularity:89,createdAt:"2026-09-25",icon:"👓",desc:"Камера 8 МП, Full HD 1080P, 32 GB пам’яті, звук без навушників, голосове керування та змінні лінзи — за даними сторіс."},
-{id:"selfie-screen-a1",category:"gadgets",name:"Magnetic Phone Vlog Selfie Screen A1",price:999,popularity:83,createdAt:"2026-09-25",icon:"🤳",desc:"Магнітне кріплення, дзеркалювання екрана та Bluetooth-фотографування — за позначеннями на упаковці."},
-{id:"mj261",category:"led",name:"MJ-261 RGB Fill Light",price:1499,popularity:84,createdAt:"2026-09-25",icon:"💡",desc:"Кільцева RGB-лампа для фото, відео та контенту."},
-{id:"mj321",category:"led",name:"MJ-321 Ring Light",price:1699,popularity:82,createdAt:"2026-09-25",icon:"💡",desc:"Кільцева лампа для освітлення під час фото та відеозйомки."},
-{id:"rechargeable-light-35",category:"led",name:"Акумуляторна лампа 35 см",price:699,popularity:76,createdAt:"2026-09-25",icon:"💡",desc:"Лампа довжиною 35 см; у сторіс заявлено до 8 годин роботи без підзарядки."},
-{id:"rechargeable-light-50",category:"led",name:"Акумуляторна лампа 50 см",price:799,popularity:78,createdAt:"2026-09-25",icon:"💡",desc:"Лампа довжиною 50 см; у сторіс заявлено до 8 годин роботи без підзарядки."},
-{id:"baseus-fm11",category:"powerbanks",name:"Baseus EnerFill FM11 10000mAh",price:1799,popularity:94,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, магнітна бездротова зарядка до 15W, до 22.5W через Type-C, компактний корпус."},
-{id:"xo-magsafe-5000",category:"powerbanks",name:"XO MagSafe Power Bank 5000mAh",price:1199,popularity:85,createdAt:"2026-09-25",icon:"🔋",desc:"5000 mAh, магнітна зарядка до 15W, PD до 20W, вбудована підставка."},
-{id:"hoco-j160b",category:"powerbanks",name:"Hoco J160B Original 20000mAh",price:1899,popularity:88,createdAt:"2026-09-25",icon:"🔋",desc:"20000 mAh, швидка зарядка до 20W, бездротова MagSafe-зарядка, LED-індикатор."},
-{id:"hoco-j117-5000",category:"powerbanks",name:"Hoco J117/J117A Esteem 5000mAh",price:1099,popularity:79,createdAt:"2026-09-25",icon:"🔋",desc:"5000 mAh, магнітна бездротова зарядка до 15W, PD до 20W, LED-індикатор."},
-{id:"hoco-j117-10000",category:"powerbanks",name:"Hoco J117/J117A Esteem 10000mAh",price:1499,popularity:84,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, магнітна бездротова зарядка до 15W, PD до 20W, LED-індикатор."},
-{id:"acefast-m17",category:"powerbanks",name:"AceFast M17 10000mAh",price:1699,popularity:86,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, підставка, магнітна бездротова зарядка, до 22.5W, LED-індикатор, Type-C ↔ Type-C у комплекті."},
-{id:"walker-wb710",category:"powerbanks",name:"Walker WB-710 10000mAh",price:1599,popularity:87,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, вбудовані Type-C та Lightning кабелі, MagSafe, підставка, швидка зарядка до 22.5W."},
-{id:"proove-xcore",category:"powerbanks",name:"Proove X-Core 22.5W 10000mAh",price:1299,popularity:83,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, швидка зарядка до 22.5W, компактний корпус."},
-{id:"proove-hoodman",category:"powerbanks",name:"Proove Hoodman Magnetic 10000mAh",price:1599,popularity:89,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, Magnetic Ring, PD 20W через Type-C, LED-дисплей заряду."},
-{id:"proove-carbon-slim",category:"powerbanks",name:"Proove Carbon Slim 22.5W 10000mAh",price:1699,popularity:91,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, 22.5W, Qi до 15W, Type-C + USB, корпус із кевлару та алюмінієвого сплаву; 198 г за даними сторіс."},
-{id:"remax-rpp565",category:"powerbanks",name:"Remax RPP-565 60000mAh",price:2799,popularity:93,createdAt:"2026-09-25",icon:"🔋",desc:"60000 mAh; на фото та публікації зазначено 20W + 22.5W."},
-{id:"walker-typec-cable",category:"cables",name:"Walker Type-C ↔ Type-C кабель",price:299,popularity:75,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Walker Type-C ↔ Type-C. Точний артикул на наданому кадрі не підтверджений."},
 {id:"hoco-k24-gimbal",category:"gadgets",name:"HOCO K24 3-Axis Smart Gimbal",price:1999,popularity:85,createdAt:"2026-09-25",icon:"🎥",desc:"3-осьовий стабілізатор для смартфона. На упаковці зазначені intelligent tracking, anti-shake, APP та режим штатива."},
-{id:"baseus-gravity-car-mount",category:"holders",name:"Baseus Car Mount Tank Gravity",price:699,popularity:82,createdAt:"2026-09-25",icon:"🚗",desc:"Гравітаційний автомобільний тримач Baseus. На упаковці зазначені обертання 360°, телескопічна конструкція 21 см та регулювання кута."},
+{id:"mj261",category:"led",name:"MJ-261 RGB Fill Light",price:1499,popularity:84,createdAt:"2026-09-25",icon:"💡",desc:"Кільцева RGB-лампа для фото, відео та контенту."},
+{id:"rechargeable-light-35",category:"led",name:"Акумуляторна лампа 35 см",price:699,popularity:76,createdAt:"2026-09-25",icon:"💡",desc:"Лампа довжиною 35 см; у сторіс заявлено до 8 годин роботи без підзарядки."},
+{id:"baseus-fm11",category:"powerbanks",name:"Baseus EnerFill FM11 10000mAh",price:1799,popularity:94,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, магнітна бездротова зарядка до 15W, до 22.5W через Type-C, компактний корпус."},
+{id:"proove-hoodman",category:"powerbanks",name:"Proove Hoodman Magnetic 10000mAh",price:1599,popularity:89,createdAt:"2026-09-25",icon:"🔋",desc:"10000 mAh, Magnetic Ring, PD 20W через Type-C, LED-дисплей заряду."},
+{id:"remax-rpp565",category:"powerbanks",name:"Remax RPP-565 60000mAh",price:2799,popularity:93,createdAt:"2026-09-25",icon:"🔋",desc:"60000 mAh; на фото та публікації зазначено 20W + 22.5W."},
 {id:"walker-wh43-33w",category:"chargers",name:"Walker WH-43 GaN 33W",price:699,popularity:86,createdAt:"2026-09-25",icon:"🔌",desc:"Мережевий GaN-адаптер Walker WH-43 потужністю 33W, порти USB та Type-C — за даними упаковки."},
-{id:"usb-c-25w-adapter",category:"chargers",name:"USB-C 25W Power Adapter",price:599,popularity:78,createdAt:"2026-09-25",icon:"🔌",desc:"Мережевий USB-C адаптер 25W із наданих матеріалів. Бренд та оригінальність не підтверджені."},
 {id:"proove-rapid-20w",category:"chargers",name:"Proove RAPID 20W Charging Set",price:699,popularity:84,createdAt:"2026-09-25",icon:"🔌",desc:"Мережевий зарядний комплект Proove RAPID 20W: Type-C адаптер, Power Delivery та кабель Type-C → Lightning — за даними упаковки."},
-{id:"acefast-a102",category:"chargers",name:"Acefast A102",price:699,popularity:80,createdAt:"2026-09-25",icon:"🔌",desc:"Мережевий зарядний пристрій Acefast A102 із наданих матеріалів. Додаткові характеристики не вказуємо, бо на кадрі вони читаються нечітко."},
 {id:"proove-nova-10w",category:"speakers",name:"Proove NOVA Bluetooth Speaker 10W",price:1299,popularity:88,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна Bluetooth-колонка Proove NOVA, 10W — за маркуванням на упаковці."},
-{id:"speaker-qd05-retro",category:"speakers",name:"QD05 Retro Style",price:1199,popularity:82,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна колонка QD05 у ретро-стилі з наданих матеріалів. Непідтверджені характеристики не додаємо."},
-{id:"speaker-x868-bear",category:"speakers",name:"X-868 Bear",price:1099,popularity:84,createdAt:"2026-09-25",icon:"🐻",desc:"Портативна колонка X-868 Bear із наданих матеріалів. Додаткові характеристики не вигадуємо."},
-{id:"speaker-borofone-br101",category:"speakers",name:"Borofone BR101 Rubik Cube",price:1199,popularity:83,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна колонка Borofone BR101 Rubik Cube із наданих матеріалів."},
-{id:"speaker-walker-wtrs81",category:"speakers",name:"Walker WTRS-81",price:1299,popularity:85,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна колонка Walker WTRS-81 із наданих матеріалів."},
-{id:"speaker-proove-facefix",category:"speakers",name:"Proove Facefix",price:1399,popularity:86,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна колонка Proove Facefix із наданих матеріалів."},
 {id:"speaker-walker-wsp750",category:"speakers",name:"Walker WSP-750 60W",price:2499,popularity:91,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна колонка Walker WSP-750, 60W — за даними наданих матеріалів."},
-{id:"speaker-80w-unidentified",category:"speakers",name:"Портативна колонка 80W",price:2999,popularity:90,createdAt:"2026-09-25",icon:"🔊",desc:"Портативна колонка 80W із наданих матеріалів. Точну модель на кадрі не підтверджено."},
-{id:"fan-mini-k9",category:"fans",name:"Mini K9 Astronaut",price:699,popularity:84,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор Mini K9 Astronaut із наданих матеріалів."},
-{id:"fan-fs21",category:"fans",name:"FS-21 Telescopic Folding",price:799,popularity:82,createdAt:"2026-09-25",icon:"🌀",desc:"Складаний телескопічний вентилятор FS-21 із наданих матеріалів."},
-{id:"fan-138-clip",category:"fans",name:"138 Clip 4in1",price:699,popularity:80,createdAt:"2026-09-25",icon:"🌀",desc:"Вентилятор 138 Clip 4in1 із наданих матеріалів."},
-{id:"fan-y18",category:"fans",name:"Y-18",price:599,popularity:78,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор Y-18 із наданих матеріалів."},
-{id:"fan-remax-rssf01",category:"fans",name:"Remax RS-SF01 Transparent",price:799,popularity:86,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор Remax RS-SF01 Transparent із наданих матеріалів."},
 {id:"fan-hoco-hx60",category:"fans",name:"HOCO HX60 Nimble",price:699,popularity:83,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор HOCO HX60 Nimble із наданих матеріалів."},
-{id:"fan-hoco-hx62",category:"fans",name:"HOCO HX62 Endless",price:749,popularity:85,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор HOCO HX62 Endless із наданих матеріалів."},
-{id:"fan-hoco-hx61",category:"fans",name:"HOCO HX61 Exquisite",price:749,popularity:84,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор HOCO HX61 Exquisite із наданих матеріалів."},
 {id:"fan-baseus-gotrip-dt1",category:"fans",name:"Baseus GoTrip DT1",price:899,popularity:88,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор Baseus GoTrip DT1 із наданих матеріалів."},
-{id:"fan-proove-fresher",category:"fans",name:"Proove Fresher",price:799,popularity:87,createdAt:"2026-09-25",icon:"🌀",desc:"Портативний вентилятор Proove Fresher із наданих матеріалів."},
 {id:"cable-walker-power-silicone-100w",category:"cables",name:"Walker Power Silicone Type-C ↔ Type-C 100W",price:399,popularity:84,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Walker Type-C ↔ Type-C 100W; назва Power Silicone читається на упаковці."},
-{id:"cable-walker-fast-100w",category:"cables",name:"Walker Fast Charging Type-C ↔ Type-C 100W",price:399,popularity:83,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Walker Type-C ↔ Type-C 100W; Fast Charging зазначено на упаковці."},
-{id:"cable-walker-qc20-silicone",category:"cables",name:"Walker Quick Charge 20W Silicone",price:349,popularity:79,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Walker Quick Charge 20W Silicone із наданих матеріалів; точний SKU не додаємо."},
-{id:"cable-walker-jelly",category:"cables",name:"Walker Jelly Silicone Cable",price:299,popularity:77,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Walker серії Jelly/Silicone із наданих матеріалів; точний SKU на кадрі не підтверджено."},
-{id:"cable-baseus-lightning",category:"cables",name:"Baseus Lightning Cable",price:349,popularity:82,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Baseus з Lightning-конектором із наданих матеріалів; точний артикул не читається."},
-{id:"cable-baseus-typec",category:"cables",name:"Baseus Type-C Cable",price:349,popularity:81,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Baseus з Type-C із наданих матеріалів; точний артикул не читається."},
-{id:"cable-baseus-high-current",category:"cables",name:"Baseus High Current Cable",price:399,popularity:80,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Baseus High Current із наданих матеріалів; конектори та точний SKU не вигадуємо."},
-{id:"cable-baseus-rapid-charge",category:"cables",name:"Baseus Rapid Charge Cable",price:399,popularity:80,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Baseus Rapid Charge із наданих матеріалів; точний артикул не підтверджено."},
-{id:"cable-proove",category:"cables",name:"Proove Cable",price:349,popularity:78,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Proove із наданих матеріалів. Точний тип та SKU на кадрі не читаються, тому не вигадуємо."}
+{id:"cable-baseus-rapid-charge",category:"cables",name:"Baseus Rapid Charge Cable",price:399,popularity:80,createdAt:"2026-09-25",icon:"🔌",desc:"Кабель Baseus Rapid Charge із наданих матеріалів; точний артикул не підтверджено."}
 ];
 
 // Catalog lifecycle foundation. Demo products stay published for QA; production admin will manage these fields.
@@ -213,15 +139,48 @@ const PROMO_CONFIG={
     // ДЕМО. У бойовій версії ці записи створюються вручну через адмінку.
     {id:"proove-nova-10w",salePrice:999,published:true,startAt:"2026-09-29T09:00:00+03:00",endAt:"2026-10-06T21:00:00+03:00"},
     {id:"proove-dreamer",salePrice:1099,published:true,startAt:"2026-09-30T09:00:00+03:00",endAt:"2026-10-05T21:00:00+03:00"},
-    {id:"baseus-fm11",salePrice:1299,published:false,startAt:"2026-09-30T09:00:00+03:00",endAt:"2026-10-07T21:00:00+03:00"}
   ]
 };
 
-const DEMO_VARIANTS={"case-magsafe":[{key:"iphone15pro-black",options:"iPhone 15 Pro · Чорний",stock:5},{key:"iphone15pro-clear",options:"iPhone 15 Pro · Прозорий",stock:2},{key:"iphone14-black",options:"iPhone 14 · Чорний",stock:1}],"cable-walker-power-silicone-100w":[{key:"1m-black",options:"1 м · Чорний",stock:6},{key:"2m-black",options:"2 м · Чорний",stock:2},{key:"2m-white",options:"2 м · Білий",stock:0}],"baseus-fm11":[{key:"10000-black",options:"10000 mAh · Чорний",stock:4},{key:"10000-white",options:"10000 mAh · Білий",stock:1}]};
+const DEMO_VARIANTS={
+"case-magsafe":[
+ {key:"iphone15pro-black",options:"iPhone 15 Pro · Чорний",stock:5},
+ {key:"iphone15pro-clear",options:"iPhone 15 Pro · Прозорий",stock:3},
+ {key:"iphone14-black",options:"iPhone 14 · Чорний",stock:2}
+],
+"case-gleam-magnetic":[
+ {key:"iphone15-black",options:"iPhone 15 · Чорний",stock:4},
+ {key:"iphone15-clear",options:"iPhone 15 · Прозорий",stock:2}
+],
+"baseus-fm11":[
+ {key:"10000-black",options:"10000 mAh · Чорний",stock:5},
+ {key:"10000-white",options:"10000 mAh · Білий",stock:3}
+],
+"cable-walker-power-silicone-100w":[
+ {key:"1m-black",options:"1 м · Чорний",stock:5},
+ {key:"2m-black",options:"2 м · Чорний",stock:2},
+ {key:"2m-white",options:"2 м · Білий",stock:0}
+],
+"cable-baseus-rapid-charge":[
+ {key:"1m-black",options:"1 м · Чорний",stock:4},
+ {key:"2m-black",options:"2 м · Чорний",stock:1}
+],
+"proove-dreamer":[
+ {key:"black",options:"Чорний",stock:4},
+ {key:"white",options:"Білий",stock:2}
+]
+};
+const DEMO_PRODUCT_STOCK={
+"hoco-h86-dragon":3,"baseus-gravity-car-mount":4,"camera-a26":2,"camera-q5":4,"printer-d7-rabbit":3,
+"walker-wts67":5,"proove-mello":3,"remax-ap10":2,"borofone-bg100":4,"xo-m8-pro":5,"xo-watch4":3,
+"hy300":2,"hoco-dt1":4,"aimb-g1":2,"hoco-k24-gimbal":3,"mj261":4,"rechargeable-light-35":5,
+"proove-hoodman":3,"remax-rpp565":2,"walker-wh43-33w":5,"proove-rapid-20w":4,
+"proove-nova-10w":3,"speaker-walker-wsp750":2,"fan-hoco-hx60":4,"fan-baseus-gotrip-dt1":3
+};
 function variantsFor(id){return DEMO_VARIANTS[id]||[]}
 function variantByKey(id,key){return variantsFor(id).find(v=>v.key===key)||null}
 function stockState(n){return n<=0?{label:"🔴 Немає",orderable:false}:n===1?{label:"🟠 Остання в магазині",orderable:false}:n<=3?{label:"🟠 Закінчується",orderable:true}:{label:"🟢 В наявності",orderable:true}}
-function demoStockFor(p,key){const a=variantsFor(p.id);if(!a.length)return {label:"🟢 В наявності",orderable:true,stock:99};const v=variantByKey(p.id,key)||a[0],s=stockState(v.stock);return {label:s.label,orderable:s.orderable,stock:v.stock,variant:v}}
+function demoStockFor(p,key){const a=variantsFor(p.id);if(!a.length){const n=Number.isFinite(Number(DEMO_PRODUCT_STOCK[p.id]))?Number(DEMO_PRODUCT_STOCK[p.id]):2,s=stockState(n);return {label:s.label,orderable:s.orderable,stock:n}}const v=variantByKey(p.id,key)||a[0],s=stockState(v.stock);return {label:s.label,orderable:s.orderable,stock:v.stock,variant:v}}
 function lineKey(id,key){return id+"::"+(key||"")}
 const WAIT_KEY="mobikitWaitlist";
 function waitOwner(){const a=getDemoAccount&&getDemoAccount();return accountKey(a)}
