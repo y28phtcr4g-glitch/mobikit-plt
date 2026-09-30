@@ -28,6 +28,8 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 @media(max-width:360px){.social-trigger{padding:7px;gap:4px}.social-trigger b{font-size:10px;white-space:nowrap}.logo{font-size:14px}.brand{gap:6px}}
 .cat-tile{min-width:0}.cat-name{overflow-wrap:anywhere}
 .field-error{display:block;color:#ff9ab5;font-size:13px;line-height:1.5;margin-top:6px}[aria-invalid="true"]{border-color:#ff638e!important}.site-notice{position:fixed;z-index:500;bottom:max(18px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(540px,calc(100% - 24px));display:flex;gap:12px;align-items:center;padding:16px;border:1px solid var(--cyan);border-radius:16px;background:#141020;box-shadow:0 8px 32px #000b;line-height:1.5}.site-notice span{flex:1}.site-notice button{flex:none;width:44px;height:44px;border:1px solid #ffffff40;border-radius:10px;background:#211831;color:#fff;cursor:pointer}
+
+.cloud-confirm{color:var(--text,#f3f4f8);max-width:min(480px,calc(100vw - 32px));width:calc(100% - 32px);box-sizing:border-box;overflow-wrap:anywhere}.cloud-confirm::backdrop{background:rgba(0,0,0,.65)}
 </style>
 </head>
 <body>
@@ -468,16 +470,16 @@ async function cloudSendLink(e){
 async function cloudCreateOrder(submit,unlock,type,buyerPhone,buyerName){
  try{
   await cloudReady;
-  const snapshot=cart.map(x=>({id:x.id,variantKey:x.variantKey||"",qty:x.qty}));
+  const owner=cloudAccount?.profileId||"guest";const snapshot=cart.map(x=>({id:x.id,variantKey:x.variantKey||"",qty:x.qty}));
   const delivery=type==="cod"?{recipient:document.getElementById("npRecipient").value.trim(),phone:document.getElementById("npPhone").value.trim(),city:document.getElementById("npCity").value.trim(),deliveryType:document.getElementById("npDeliveryType").value,point:document.getElementById("npPoint").value.trim(),comment:document.getElementById("npComment").value.trim()}:{pickup:true};
   const payload={items:snapshot,payment:type,buyerName,buyerPhone,delivery};
-  const signature=JSON.stringify({owner:cloudAccount?.profileId||"guest",payload});
+  const signature=JSON.stringify({owner,payload});
   const digest=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(signature)))).map(x=>x.toString(16).padStart(2,"0")).join("");
   const key="mobikitCloudPending::"+digest;let receipt=JSON.parse(localStorage.getItem(key)||"null");
   if(!receipt||typeof receipt.request!=="string"||typeof receipt.token!=="string"){receipt={request:crypto.randomUUID(),token:crypto.randomUUID()};localStorage.setItem(key,JSON.stringify(receipt))}
-  const order=await cloudRpc("mk_create_order",{p_request_id:receipt.request,p_access_token:receipt.token,p_order:payload});
-  if(!cloudAccount){cloudGuestRequests[order.serverId]=receipt.request;const receipts=cloudReceipts();if(!receipts.some(x=>x.request===receipt.request)){receipts.unshift(receipt);localStorage.setItem("mobikitCloudReceipts",JSON.stringify(receipts))}}
-  if(!cloudOrders.some(x=>x.id===order.id))cloudOrders.unshift(order);
+  if((cloudAccount?.profileId||"guest")!==owner)throw new Error("Акаунт змінився. Перевір дані замовлення.");const order=await cloudRpc("mk_create_order",{p_request_id:receipt.request,p_access_token:receipt.token,p_order:payload});
+  if(order.ownerKey==="guest"){cloudGuestRequests[order.serverId]=receipt.request;const receipts=cloudReceipts();if(!receipts.some(x=>x.request===receipt.request)){receipts.unshift(receipt);localStorage.setItem("mobikitCloudReceipts",JSON.stringify(receipts))}}
+  if(order.ownerKey===(cloudAccount?.profileId||"guest")&&!cloudOrders.some(x=>x.id===order.id))cloudOrders.unshift(order);
   const previous=cart;cart=cart.map(x=>{const sent=snapshot.find(y=>y.id===x.id&&(y.variantKey||"")===(x.variantKey||""));return {...x,qty:x.qty-(sent?.qty||0)}}).filter(x=>x.qty>0);
   if(!saveCart()){cart=previous;renderCart();renderOrders();notify("Замовлення збережене на сервері. Кошик не вдалося очистити; повторна спроба з тим самим кошиком поверне це замовлення.");return}
   localStorage.removeItem(key);renderCart();renderOrders();document.getElementById("checkoutDemo").hidden=true;notify("Демо-замовлення "+order.id+" збережене на сервері. Магазин не отримує заявку на продаж.");go("account");
@@ -486,7 +488,7 @@ async function cloudCreateOrder(submit,unlock,type,buyerPhone,buyerName){
 }
 function cloudConfirmCancel(id){
  return new Promise(resolve=>{
- const dialog=document.createElement("dialog");dialog.className="card";dialog.setAttribute("aria-label","Скасування замовлення");dialog.innerHTML='<h3>Скасувати замовлення?</h3><p></p><div class="buttons"><button class="btn" data-yes>Скасувати замовлення</button><button class="btn alt" data-no>Залишити</button></div>';dialog.querySelector("p").textContent=id;
+ const dialog=document.createElement("dialog");dialog.className="card cloud-confirm";dialog.setAttribute("aria-label","Скасування замовлення");dialog.innerHTML='<h3>Скасувати замовлення?</h3><p></p><div class="buttons"><button class="btn" data-yes>Скасувати замовлення</button><button class="btn alt" data-no>Залишити</button></div>';dialog.querySelector("p").textContent=id;
  const done=value=>{dialog.close();dialog.remove();resolve(value)};
  dialog.querySelector("[data-yes]").onclick=()=>done(true);dialog.querySelector("[data-no]").onclick=()=>done(false);dialog.addEventListener("cancel",e=>{e.preventDefault();done(false)});document.body.append(dialog);dialog.showModal();dialog.querySelector("[data-no]").focus();
  })
