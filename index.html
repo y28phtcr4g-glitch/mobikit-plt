@@ -98,6 +98,8 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
   .order-code{max-width:min(62vw,260px);font-size:10px;letter-spacing:.1em;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 }
 
+
+#adminDetails{min-width:0}#adminDetails summary{cursor:pointer;padding:14px 0;font-weight:700}#adminDetails .card{margin-top:8px}#adminBannerForm{display:grid;gap:16px;min-width:0}#adminBannerForm>label{display:grid;gap:7px;min-width:0}#adminBannerForm input:not([type=checkbox]),#adminBannerForm textarea{width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#adminBannerForm textarea{resize:vertical}#adminBannerForm .admin-publish{display:flex;align-items:center;gap:10px}#adminBannerForm input[type=checkbox]{width:20px;height:20px;flex:0 0 auto}#adminStatus{overflow-wrap:anywhere}#adminReload{max-width:100%;white-space:normal}#adminPreview{display:block;background:#08080e;border-radius:12px}
 </style>
 </head>
 <body>
@@ -588,13 +590,13 @@ adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування м�
 <label>Або нове фото (JPEG, PNG, WebP; до 5 МБ)<input id="adminFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
 <p class="muted">Фото у сховищі публічні, навіть для чернетки. Не завантажуй приватні файли.</p>
 <img id="adminPreview" alt="Попередній перегляд банера" hidden style="width:100%;max-height:360px;object-fit:contain">
-<label><input id="adminPublished" type="checkbox"> Показувати банер на сайті</label>
+<label class="admin-publish"><input id="adminPublished" type="checkbox"> Показувати банер на сайті</label>
 <button class="btn" type="submit">Зберегти банер</button></form></div></details>`;
 document.getElementById('account').append(adminPanel);
 const adminEl=id=>document.getElementById(id);
 function adminReset(){adminEpoch++;adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();adminEl('adminPreview').hidden=true;adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
 function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':e?.code==='42501'?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
-function adminImageUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
+function adminImageUrl(value){try{if(/[\s\\<>"]/u.test(value))return '';const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
 function adminPreview(){const url=adminImageUrl(adminEl('adminImage').value);adminEl('adminPreview').hidden=!url;if(url)adminEl('adminPreview').src=url;else adminEl('adminPreview').removeAttribute('src')}
 async function adminLoad(){
  const epoch=++adminEpoch;adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true;
@@ -609,7 +611,7 @@ async function adminLoad(){
   adminRevision=row.revision;adminEl('adminTitle').value=row.title;adminEl('adminSubtitle').value=row.subtitle;
   adminEl('adminImage').value=row.image_url;adminEl('adminPublished').checked=row.published;adminEl('adminFile').value='';adminPreview();
   adminEl('adminBannerForm').hidden=false;adminEl('adminStatus').textContent='Доступ: '+(role==='owner'?'Owner':'Адміністратор')+'. '+(row.published?'Банер опубліковано.':'Банер приховано.');
- }catch(e){if(epoch===adminEpoch)adminEl('adminStatus').textContent=adminMessage(e)}
+ }catch(e){if(epoch===adminEpoch){adminRole=null;adminRevision=null;adminEl('adminStatus').textContent=adminMessage(e)}}
 }
 async function cloudLoadBanner(client=cloudClient){
  const epoch=++bannerEpoch;

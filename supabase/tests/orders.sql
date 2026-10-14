@@ -30,7 +30,7 @@ perform pg_temp.reject_order(base-'items');
 perform pg_temp.reject_order(jsonb_set(base,'{items}','[]'));
 perform pg_temp.reject_order(jsonb_set(base,'{items,0,qty}','-1'));
 perform pg_temp.reject_order(jsonb_set(base,'{items,0,qty}','1.5'));
-perform pg_temp.reject_order(jsonb_set(base,'{items}',base->'items'||base->'items'));
+perform pg_temp.reject_order(jsonb_set(base,'{items}',(base->'items')||(base->'items')));
 perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"cable-baseus-rapid-charge","variantKey":"2m-black","qty":1}]'));
 perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"cable-walker-power-silicone-100w","variantKey":"2m-white","qty":1}]'));
 perform pg_temp.reject_order(jsonb_set(base,'{items}','[{"id":"case-carbon","qty":1}]'));

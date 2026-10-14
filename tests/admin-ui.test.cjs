@@ -24,9 +24,20 @@ test('reset invalidates in-flight role response',async()=>{
 test('missing migration fails closed',async()=>{
  const h=harness(async()=>{throw {code:'PGRST202'}});await h.run('adminLoad()');assert.equal(h.el('adminBannerForm').hidden,true);
 });
+test('draft access failure clears previously loaded role and revision',async()=>{
+ const h=harness(async name=>{if(name==='mk_admin_role')return 'owner';throw {code:'42501'}});
+ await h.run('adminLoad()');assert.equal(h.run('adminRole'),null);assert.equal(h.run('adminRevision'),null);assert.equal(h.el('adminBannerForm').hidden,true);
+});
+test('invalid uploads fail before contacting Storage or saving',async()=>{
+ for(const file of [{type:'image/svg+xml',size:10},{type:'image/png',size:0},{type:'image/jpeg',size:5242881}]){
+  let saves=0;const h=harness(async name=>{if(name==='mk_admin_role')return 'owner';if(name==='mk_admin_banner_get')return [row];saves++});
+  await h.run('adminLoad()');h.el('adminFile').files=[file];await h.el('adminBannerForm').onsubmit({preventDefault(){}});
+  assert.equal(saves,0);assert.equal(h.run('adminBusy'),false);
+ }
+});
 test('unpublished banner is hidden and unsafe URLs are rejected',async()=>{
  const h=harness(async()=>[]);await h.run('cloudLoadBanner()');assert.equal(h.el('promoBanner').hidden,true);
- for(const value of ['javascript:alert(1)','http://example.com','https://user:password@example.com'])assert.equal(h.run(`adminImageUrl(${JSON.stringify(value)})`),'');
+ for(const value of ['javascript:alert(1)','http://example.com','https://user:password@example.com','https://example.com/a b','https://example.com/a\\b','https://example.com/"x'])assert.equal(h.run(`adminImageUrl(${JSON.stringify(value)})`),'');
 });
 test('save supplies loaded revision; conflicts retain draft',async()=>{
  let payload;const h=harness(async(name,args)=>{if(name==='mk_admin_role')return 'owner';if(name==='mk_admin_banner_get')return [row];payload=args;throw {code:'40001'}});

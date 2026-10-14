@@ -14,8 +14,8 @@ const mock=`export function createClient(){return {
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.MOBIKIT_BROWSER_PATH?{executablePath:process.env.MOBIKIT_BROWSER_PATH}:{})});
  try{
-  for(const role of ['owner','administrator','seller',null]){
-   const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  for(const width of [320,390,768,1440])for(const role of ['owner','administrator','seller',null]){
+   const page=await browser.newPage({viewport:{width,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.addInitScript(role=>{window.qaRole=role},role);
    await page.route('**/*',route=>{const url=route.request().url();if(url.startsWith('https://mobikit.test/'))return route.fulfill({contentType:'text/html',body:html});if(url.startsWith('https://esm.sh/'))return route.fulfill({contentType:'application/javascript',body:mock,headers:{'access-control-allow-origin':'*'}});return route.abort()});
    await page.goto('https://mobikit.test/?cloud=1#account');
@@ -28,9 +28,16 @@ const mock=`export function createClient(){return {
     assert.equal(await page.evaluate(()=>window.qaSave.p_revision),4);
     assert.equal(await page.evaluate(()=>window.qaSave.p_title),'Updated');
    }else assert.equal(await page.locator('#adminBannerForm').isVisible(),false);
+   if(['owner','administrator'].includes(role)){
+    const form=page.locator('#adminBannerForm');
+    const bounds=await form.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width);
+    for(const id of ['adminTitle','adminSubtitle','adminImage','adminFile']){
+     const box=await page.locator('#'+id).boundingBox();assert.ok(box.x>=bounds.x&&box.x+box.width<=bounds.x+bounds.width+1,id+' overflows editor');
+    }
+   }
    assert.deepEqual(errors,[]);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-   await page.close();console.log('PASS mobile browser role:',role);
+   await page.close();console.log('PASS browser:',width,role);
   }
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

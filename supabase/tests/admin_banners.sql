@@ -1,5 +1,9 @@
 -- Run in a disposable Supabase project after all migrations. Always rolls back.
 begin;
+-- Simulate an unsafe legacy policy. Restrictive guards must still deny access.
+-- Both this policy and all fixtures disappear on rollback.
+create policy qa_legacy_storage_allow_all on storage.objects for all to public
+using (true) with check (true);
 insert into auth.users(id,aud,role,email) values
  ('00000000-0000-4000-8000-000000000081','authenticated','authenticated','owner@example.invalid'),
  ('00000000-0000-4000-8000-000000000082','authenticated','authenticated','admin@example.invalid'),
@@ -75,6 +79,24 @@ begin
  denied=false;
  begin insert into public.mk_admin_members(user_id,role) values('00000000-0000-4000-8000-000000000084','owner'); exception when insufficient_privilege then denied=true; end;
  if not denied then raise exception 'Self promotion accepted'; end if;
+end $$;
+reset role;
+-- Revocation must take effect without issuing a new JWT/session.
+delete from public.mk_admin_members where user_id='00000000-0000-4000-8000-000000000082';
+update auth.users set raw_user_meta_data='{"role":"owner","is_admin":true}'::jsonb
+where id='00000000-0000-4000-8000-000000000082';
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000082',true);
+set local role authenticated;
+do $$ declare denied boolean=false; begin
+ if public.mk_admin_role() is not null then raise exception 'Metadata granted a role'; end if;
+ begin perform public.mk_admin_banner_save('https://example.com/a.jpg','Revoked','',true,0);
+ exception when insufficient_privilege then denied=true; end;
+ if not denied then raise exception 'Revoked administrator saved'; end if;
+ denied=false;
+ begin insert into storage.objects(bucket_id,name)
+ values('mk-banners','weekly/00000000-0000-4000-8000-000000000082/a9.webp');
+ exception when insufficient_privilege then denied=true; end;
+ if not denied then raise exception 'Revoked administrator uploaded'; end if;
 end $$;
 reset role;
 set local role anon;
