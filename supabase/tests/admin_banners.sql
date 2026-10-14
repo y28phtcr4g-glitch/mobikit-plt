@@ -36,16 +36,63 @@ begin
   perform public.mk_admin_banner_save('https://example.com/a.jpg','A','',false,r);
   if exists(select 1 from public.mk_weekly_banner()) then raise exception 'Hidden banner leaked'; end if;
  end loop;
+ -- Table API must remain closed even for an administrator. RPCs are the boundary.
+ if has_table_privilege(current_user,'public.mk_admin_members','SELECT')
+ or has_table_privilege(current_user,'public.mk_admin_members','INSERT')
+ or has_table_privilege(current_user,'public.mk_admin_members','UPDATE')
+ or has_table_privilege(current_user,'public.mk_site_banners','SELECT')
+ or has_table_privilege(current_user,'public.mk_site_banners','UPDATE') then
+  raise exception 'Direct table privileges exposed';
+ end if;
+ -- Metadata-level RLS checks; real Storage API size/MIME checks are separate.
+ foreach uid in array array['00000000-0000-4000-8000-000000000081','00000000-0000-4000-8000-000000000082'] loop
+  perform set_config('request.jwt.claim.sub',uid,true);
+  insert into storage.objects(bucket_id,name) values('mk-banners','weekly/'||uid||'/a1.webp');
+  denied=false;
+  begin insert into storage.objects(bucket_id,name) values('mk-banners','weekly/not-my-uid/a1.webp');
+  exception when insufficient_privilege then denied=true; end;
+  if not denied then raise exception 'Foreign upload path accepted'; end if;
+  denied=false;
+  begin insert into storage.objects(bucket_id,name) values('mk-banners','weekly/'||uid||'/a1.svg');
+  exception when insufficient_privilege then denied=true; end;
+  if not denied then raise exception 'Unexpected extension accepted'; end if;
+  begin
+   update storage.objects set name='weekly/'||uid||'/a2.webp' where bucket_id='mk-banners';
+   if found then raise exception 'Browser overwrite permitted'; end if;
+  exception when insufficient_privilege then null; end;
+  begin
+   delete from storage.objects where bucket_id='mk-banners';
+   if found then raise exception 'Browser delete permitted'; end if;
+  exception when insufficient_privilege then null; end;
+ end loop;
+ foreach uid in array array['00000000-0000-4000-8000-000000000083','00000000-0000-4000-8000-000000000084'] loop
+  perform set_config('request.jwt.claim.sub',uid,true);
+  denied=false;
+  begin insert into storage.objects(bucket_id,name) values('mk-banners','weekly/'||uid||'/a1.webp');
+  exception when insufficient_privilege then denied=true; end;
+  if not denied then raise exception 'Unauthorized Storage upload'; end if;
+ end loop;
  denied=false;
  begin insert into public.mk_admin_members(user_id,role) values('00000000-0000-4000-8000-000000000084','owner'); exception when insufficient_privilege then denied=true; end;
  if not denied then raise exception 'Self promotion accepted'; end if;
 end $$;
 reset role;
 set local role anon;
-do $$ begin
+do $$ declare denied boolean; begin
  if exists(select 1 from public.mk_weekly_banner()) then raise exception 'Anonymous draft leak'; end if;
  if has_function_privilege('anon','public.mk_admin_role()','execute') then raise exception 'Anonymous role RPC'; end if;
  if to_regprocedure('public.mk_admin_banner_save(text,text,text,boolean)') is not null then raise exception 'Old save exists'; end if;
+ denied=false;
+ begin perform public.mk_admin_banner_get(); exception when insufficient_privilege then denied=true; end;
+ if not denied then raise exception 'Anonymous draft RPC accepted'; end if;
+ denied=false;
+ begin perform public.mk_admin_banner_save('https://example.com/a.jpg','A','',true,0);
+ exception when insufficient_privilege then denied=true; end;
+ if not denied then raise exception 'Anonymous save RPC accepted'; end if;
+ denied=false;
+ begin insert into storage.objects(bucket_id,name) values('mk-banners','weekly/00000000-0000-4000-8000-000000000081/a3.webp');
+ exception when insufficient_privilege then denied=true; end;
+ if not denied then raise exception 'Anonymous upload accepted'; end if;
 end $$;
 reset role;
 rollback;

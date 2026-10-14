@@ -6,9 +6,9 @@ const html=fs.readFileSync('index.html','utf8');
 const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 new vm.Script(script); // Check the entire store, not only the extracted editor.
 const source=script.slice(script.indexOf('let adminEpoch='),script.indexOf('if(CLOUD_MODE){',script.indexOf('let adminEpoch=')));
-function harness(rpc){
+function harness(rpc,storage){
  const elements=new Map();const el=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,textContent:'',files:[],elements:[],reset(){},append(){},removeAttribute(){}});return elements.get(id)};
- const ctx=vm.createContext({document:{createElement:()=>({}),getElementById:el},URL,crypto:require('node:crypto').webcrypto,CLOUD_MODE:true,cloudClient:{rpc:async name=>({data:await rpc(name)})},cloudAccount:{profileId:'verified-user'},cloudRpc:rpc,PROMO_CONFIG:{},renderPromos(){}});
+ const ctx=vm.createContext({document:{createElement:()=>({}),getElementById:el},URL,crypto:require('node:crypto').webcrypto,CLOUD_MODE:true,cloudClient:{storage,rpc:async name=>({data:await rpc(name)})},cloudAccount:{profileId:'verified-user'},cloudRpc:rpc,PROMO_CONFIG:{},renderPromos(){}});
  vm.runInContext(source,ctx);return {ctx,el,run:code=>vm.runInContext(code,ctx)};
 }
 const row={revision:3,title:'Banner',subtitle:'Text',image_url:'https://example.com/image.jpg',published:true};
@@ -36,4 +36,23 @@ test('save supplies loaded revision; conflicts retain draft',async()=>{
 test('access revoked during save closes editor',async()=>{
  const h=harness(async name=>{if(name==='mk_admin_role')return 'administrator';if(name==='mk_admin_banner_get')return [row];throw {code:'42501'}});
  await h.run('adminLoad()');await h.el('adminBannerForm').onsubmit({preventDefault(){}});assert.equal(h.el('adminBannerForm').hidden,true);assert.equal(h.run('adminRole'),null);
+});
+test('older published response cannot undo a newer hidden banner',async()=>{
+ let resolve;let calls=0;const h=harness(()=>++calls===1?new Promise(r=>resolve=r):[]);
+ const older=h.run('cloudLoadBanner()');await h.run('cloudLoadBanner()');resolve([row]);await older;
+ assert.equal(h.el('promoBanner').hidden,true);
+});
+test('older request failure cannot hide a newer published banner',async()=>{
+ let reject;let calls=0;const h=harness(()=>++calls===1?new Promise((r,j)=>reject=j):[row]);
+ const older=h.run('cloudLoadBanner()');await h.run('cloudLoadBanner()');reject(new Error('network'));await older;
+ assert.equal(h.el('promoBanner').hidden,false);
+});
+test('failed save retains uploaded URL and retry does not upload again',async()=>{
+ let uploads=0,saves=0;const url='https://example.com/new.webp';
+ const storage={from:()=>({upload:async()=>{uploads++;return {}},getPublicUrl:()=>({data:{publicUrl:url}})})};
+ const h=harness(async name=>{if(name==='mk_admin_role')return 'owner';if(name==='mk_admin_banner_get')return [row];if(name==='mk_admin_banner_save'){if(++saves===1)throw new Error('network');return 4}return [row]},storage);
+ await h.run('adminLoad()');h.el('adminFile').files=[{type:'image/webp',size:10}];
+ await h.el('adminBannerForm').onsubmit({preventDefault(){}});
+ assert.equal(h.el('adminImage').value,url);assert.equal(h.el('adminFile').value,'');
+ h.el('adminFile').files=[];await h.el('adminBannerForm').onsubmit({preventDefault(){}});assert.equal(uploads,1);assert.equal(saves,2);
 });
