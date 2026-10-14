@@ -6,15 +6,20 @@ const html=fs.readFileSync('index.html','utf8');
 const mock=`export function createClient(){return {
  auth:{getSession:async()=>({data:{session:{}}}),getUser:async()=>({data:{user:{id:'qa-user',email:'qa@example.invalid'}}}),onAuthStateChange(){window.qaReady=true},signOut:async()=>({})},
  from(){return {select(){return this},eq(){return this},maybeSingle:async()=>({data:{name:'QA User'}})}},
+ storage:{from:()=>({upload:async(path,file,options)=>{const result=await(await fetch('/qa-storage',{method:'POST',body:JSON.stringify({path,type:file.type,size:file.size,options})})).json();window.qaUploadFinished=true;return result},getPublicUrl:path=>({data:{publicUrl:'https://example.invalid/'+path}})})},
  rpc:async(name,args)=>{const result=await(await fetch('/qa-rpc',{method:'POST',body:JSON.stringify({name,args})})).json();if(name==='mk_admin_banner_save')window.qaSave=args;return result}
 }}`;
 function backend(role='owner'){
- return {role,banner:{title:'QA Banner',subtitle:'Draft',image_url:'https://example.invalid/banner.jpg',published:false,revision:4},saves:0};
+ return {role,banner:{title:'QA Banner',subtitle:'Draft',image_url:'https://example.invalid/banner.jpg',published:false,revision:4},saves:0,uploads:[]};
 }
 async function openEditor(browser,state,width=390){
  const page=await browser.newPage({viewport:{width,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',async route=>{
   const url=route.request().url();
+  if(url==='https://mobikit.test/qa-storage'){
+   state.uploads.push(JSON.parse(route.request().postData()));if(state.uploadGate)await state.uploadGate;
+   return route.fulfill({contentType:'application/json',body:JSON.stringify(['owner','administrator'].includes(state.role)?{}:{error:{statusCode:'403'}})});
+  }
   if(url==='https://mobikit.test/qa-rpc'){
    const {name,args}=JSON.parse(route.request().postData());let result={data:[]};
    if(name==='mk_admin_role')result={data:state.role};
@@ -22,6 +27,7 @@ async function openEditor(browser,state,width=390){
    if(name==='mk_admin_banner_get'||name==='mk_admin_banner_save'){
     if(!['owner','administrator'].includes(state.role))result={error:{code:'42501',message:'Not authorized'}};
     else if(name==='mk_admin_banner_get')result={data:[state.banner]};
+    else if(state.failNextSave){state.failNextSave=false;result={error:{code:'500',message:'Temporary failure'}}}
     else if(args.p_revision!==state.banner.revision)result={error:{code:'40001',message:'Conflict'}};
     else{state.banner={title:args.p_title,subtitle:args.p_subtitle,image_url:args.p_image_url,published:args.p_published,revision:state.banner.revision+1};state.saves++;result={data:state.banner.revision}}
    }
@@ -95,6 +101,42 @@ async function openEditor(browser,state,width=390){
    await page.locator('#adminBannerForm').waitFor({state:'hidden'});
    assert.equal(await page.locator('#adminTitle').inputValue(),'');assert.equal(state.saves,0);
    assert.deepEqual(errors,[]);await page.close();console.log('PASS browser: logout clears editor');
+  }
+  {
+   const state=backend();const {page,errors}=await openEditor(browser,state);
+   await page.locator('#adminTitle').fill('Keep this draft');
+   await page.locator('#adminDetails summary').click();await page.locator('#adminDetails summary').click();
+   assert.equal(await page.locator('#adminTitle').inputValue(),'Keep this draft');
+   assert.deepEqual(errors,[]);await page.close();console.log('PASS browser: collapse retains draft');
+  }
+  {
+   const state=backend();state.failNextSave=true;const {page,errors}=await openEditor(browser,state);
+   await page.locator('#adminFile').setInputFiles({name:'banner.png',mimeType:'image/png',buffer:Buffer.from('mock image')});
+   await page.locator('#adminBannerForm button[type=submit]').click();
+   await page.waitForFunction(()=>document.getElementById('adminStatus').textContent.includes('Не вдалося'));
+   const image=await page.locator('#adminImage').inputValue();assert.match(image,/^https:\/\/example.invalid\/weekly\/qa-user\//);
+   assert.equal(await page.locator('#adminFile').inputValue(),'');
+   await page.locator('#adminBannerForm button[type=submit]').click();
+   await page.waitForFunction(()=>document.getElementById('adminStatus').textContent.includes('Збережено'));
+   assert.equal(state.uploads.length,1);assert.equal(state.saves,1);assert.equal(state.uploads[0].options.upsert,false);assert.equal(state.banner.image_url,image);
+   assert.deepEqual(errors,[]);await page.close();console.log('PASS browser: uploaded URL survives save failure and retry');
+  }
+  {
+   const state=backend();const {page,errors}=await openEditor(browser,state);state.role=null;
+   await page.locator('#adminFile').setInputFiles({name:'banner.webp',mimeType:'image/webp',buffer:Buffer.from('mock image')});
+   await page.locator('#adminBannerForm button[type=submit]').click();await page.locator('#adminBannerForm').waitFor({state:'hidden'});
+   assert.equal(state.saves,0);assert.match(await page.locator('#adminStatus').textContent(),/відкликаний/);
+   assert.deepEqual(errors,[]);await page.close();console.log('PASS browser: Storage 403 closes editor');
+  }
+  {
+   const state=backend();let release;state.uploadGate=new Promise(r=>release=r);const {page,errors}=await openEditor(browser,state);
+   await page.locator('#adminFile').setInputFiles({name:'banner.jpg',mimeType:'image/jpeg',buffer:Buffer.from('mock image')});
+   await page.locator('#adminBannerForm button[type=submit]').click();
+   assert.equal(await page.locator('#adminTitle').isDisabled(),true);
+   await page.locator('[data-account-view=security]').click();await page.locator('#demoLogout').click();
+   await page.locator('#adminBannerForm').waitFor({state:'hidden'});release();await page.waitForFunction(()=>window.qaUploadFinished);
+   assert.equal(state.saves,0);assert.equal(await page.locator('#adminTitle').isDisabled(),false);assert.equal(await page.locator('#adminImage').inputValue(),'');
+   assert.deepEqual(errors,[]);await page.close();console.log('PASS browser: logout during upload prevents stale save');
   }
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

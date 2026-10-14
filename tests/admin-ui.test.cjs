@@ -67,3 +67,27 @@ test('failed save retains uploaded URL and retry does not upload again',async()=
  assert.equal(h.el('adminImage').value,url);assert.equal(h.el('adminFile').value,'');
  h.el('adminFile').files=[];await h.el('adminBannerForm').onsubmit({preventDefault(){}});assert.equal(uploads,1);assert.equal(saves,2);
 });
+test('Storage authorization failures close editor before banner save',async()=>{
+ for(const error of [{statusCode:'403'},{status:401}]){
+  let saves=0;const storage={from:()=>({upload:async()=>({error})})};
+  const h=harness(async name=>{if(name==='mk_admin_role')return 'owner';if(name==='mk_admin_banner_get')return [row];saves++},storage);
+  await h.run('adminLoad()');h.el('adminFile').files=[{type:'image/png',size:10}];await h.el('adminBannerForm').onsubmit({preventDefault(){}});
+  assert.equal(saves,0);assert.equal(h.el('adminBannerForm').hidden,true);assert.equal(h.run('adminRevision'),null);assert.match(h.el('adminStatus').textContent,/відкликаний/);
+ }
+});
+test('old upload cannot save or unlock a new session operation',async()=>{
+ let finishUpload,finishSave,saves=0;
+ const storage={from:()=>({upload:()=>new Promise(r=>finishUpload=r),getPublicUrl:()=>({data:{publicUrl:'https://example.com/old.png'}})})};
+ const h=harness(async name=>{if(name==='mk_admin_role')return 'owner';if(name==='mk_admin_banner_get')return [row];if(name==='mk_admin_banner_save'){saves++;return new Promise(r=>finishSave=r)}return []},storage);
+ const control={disabled:false};h.el('adminBannerForm').elements=[control];
+ await h.run('adminLoad()');h.el('adminFile').files=[{type:'image/png',size:10}];const old=h.el('adminBannerForm').onsubmit({preventDefault(){}});
+ h.run("adminReset();cloudAccount={profileId:'new-user'}");assert.equal(control.disabled,false);assert.equal(h.run('adminBusy'),false);
+ h.el('adminFile').files=[];await h.run('adminLoad()');const current=h.el('adminBannerForm').onsubmit({preventDefault(){}});
+ finishUpload({});await old;assert.equal(saves,1);assert.equal(h.run('adminBusy'),true);assert.equal(control.disabled,true);assert.equal(h.el('adminImage').value,row.image_url);
+ finishSave(4);await current;assert.equal(h.run('adminBusy'),false);assert.equal(control.disabled,false);
+});
+test('closing and reopening editor retains unsaved text',async()=>{
+ let calls=0;const h=harness(async name=>{calls++;return name==='mk_admin_role'?'owner':[row]});
+ await h.run('adminLoad()');h.el('adminTitle').value='Unsaved title';h.el('adminDetails').open=true;h.el('adminDetails').ontoggle();
+ assert.equal(calls,2);assert.equal(h.el('adminTitle').value,'Unsaved title');
+});

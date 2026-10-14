@@ -594,8 +594,9 @@ adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування м�
 <button class="btn" type="submit">Зберегти банер</button></form></div></details>`;
 document.getElementById('account').append(adminPanel);
 const adminEl=id=>document.getElementById(id);
-function adminReset(){adminEpoch++;adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();adminEl('adminPreview').hidden=true;adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
-function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':e?.code==='42501'?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
+function adminReset(){adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
+function adminDenied(e){return e?.code==='42501'||['401','403'].includes(String(e?.statusCode||e?.status||''))}
+function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':adminDenied(e)?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
 function adminImageUrl(value){try{if(/[\s\\<>"]/u.test(value))return '';const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
 function adminPreview(){const url=adminImageUrl(adminEl('adminImage').value);adminEl('adminPreview').hidden=!url;if(url)adminEl('adminPreview').src=url;else adminEl('adminPreview').removeAttribute('src')}
 async function adminLoad(){
@@ -622,7 +623,7 @@ async function cloudLoadBanner(client=cloudClient){
  }catch{if(epoch===bannerEpoch)adminEl('promoBanner').hidden=true}
 }
 adminEl('adminReload').onclick=()=>{if(!adminBusy)adminLoad()};
-adminEl('adminDetails').ontoggle=()=>{if(adminEl('adminDetails').open&&!adminBusy)adminLoad()};
+adminEl('adminDetails').ontoggle=()=>{if(adminEl('adminDetails').open&&!adminBusy&&adminRevision===null)adminLoad()};
 adminEl('adminImage').oninput=adminPreview;
 adminEl('adminBannerForm').onsubmit=async e=>{
  e.preventDefault();if(adminBusy||adminRevision===null||!['owner','administrator'].includes(adminRole))return;
@@ -646,8 +647,8 @@ adminEl('adminBannerForm').onsubmit=async e=>{
   const next=await cloudRpc('mk_admin_banner_save',{p_image_url:image,p_title:title,p_subtitle:subtitle,p_published:published,p_revision:revision});
   if(epoch!==adminEpoch)return;
   adminRevision=next;adminEl('adminImage').value=image;adminEl('adminFile').value='';adminPreview();adminEl('adminStatus').textContent=published?'Банер опубліковано.':'Збережено. Банер приховано.';await cloudLoadBanner();
- }catch(err){if(epoch===adminEpoch){adminEl('adminStatus').textContent=adminMessage(err);if(err.code==='42501'){adminRole=null;adminEl('adminBannerForm').hidden=true}}}
- finally{adminBusy=false;controls.forEach(x=>x.disabled=false)}
+ }catch(err){if(epoch===adminEpoch){adminEl('adminStatus').textContent=adminMessage(err);if(adminDenied(err)){adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true}}}
+ finally{if(epoch===adminEpoch){adminBusy=false;controls.forEach(x=>x.disabled=false)}}
 };
 
 if(CLOUD_MODE){
