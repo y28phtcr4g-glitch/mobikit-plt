@@ -808,7 +808,10 @@ function syncStoreMode(){
  const title=document.querySelector('#checkoutDemo h3');if(title)title.textContent=storeLive?'Оформлення замовлення':'Демо-оформлення';
  const auth=document.querySelector('.demo-auth-note');if(auth)auth.textContent='Вхід підтверджується листом на твою пошту.';
  document.title=storeLive?'MOBIKIT PLT':'MOBIKIT PLT — Demo';
- const footer=[...document.querySelectorAll('footer, .footer')].find(x=>x.textContent.includes('©'));if(footer&&storeLive)for(const el of footer.querySelectorAll('*'))if(el.children.length===0&&el.textContent.includes('©'))el.textContent='© MOBIKIT PLT';
+ const hero=document.querySelector('.hero p');if(hero&&storeLive)hero.textContent='Аксесуари та гаджети MOBIKIT PLT. Замовляй із доставкою Новою поштою або забирай у магазині.';
+ const checkoutLabel=document.querySelector('#checkoutDemo .eyebrow');if(checkoutLabel)checkoutLabel.textContent=storeLive?'ЗАМОВЛЕННЯ':'DEMO CHECKOUT';
+ for(const el of document.querySelectorAll('footer,.foot,.copyright'))if(storeLive&&el.textContent.includes('©')&&el.children.length===0)el.textContent='© MOBIKIT PLT';
+ const footer=[...document.querySelectorAll('footer, .footer')].find(x=>x.textContent.includes('©'));if(footer&&storeLive){const extra=footer.querySelector('span:last-child');if(extra&&extra.textContent.includes('Demo'))extra.textContent=''}if(footer&&storeLive)for(const el of footer.querySelectorAll('*'))if(el.children.length===0&&el.textContent.includes('©'))el.textContent='© MOBIKIT PLT';
 }
 function orderAdminInit(){
  const section=document.createElement('section');section.id='storeOrders';section.className='page';section.innerHTML='<div class="section"><h2>Замовлення магазину</h2><p class="muted">Статуси й ТТН вносить магазин. Автоматичне відстеження Нової пошти ще не підключене. Завершення продажу списує кількість зі складу.</p><button class="btn" id="storeOrdersRefresh" type="button">Оновити замовлення</button><label>Пошук замовлення<input id="storeOrdersSearch" type="search" placeholder="Номер, телефон або отримувач"></label><p role="status" id="storeOrdersStatus"></p><div id="storeOrdersList"></div></div>';adminEl('products').after(section);
