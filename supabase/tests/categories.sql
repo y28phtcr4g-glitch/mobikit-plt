@@ -1,0 +1,22 @@
+begin;
+insert into auth.users(id,email) values('00000000-0000-4000-8000-000000000091','category-owner@example.invalid'),('00000000-0000-4000-8000-000000000092','category-customer@example.invalid');
+insert into public.mk_admin_members(user_id,role) values('00000000-0000-4000-8000-000000000091','owner');
+set local role authenticated;
+do $$ declare r jsonb; item jsonb; begin
+ perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000092',true);
+ begin perform public.mk_admin_category_create('Forbidden');raise exception 'Customer create';exception when insufficient_privilege then null;end;
+ begin insert into public.mk_categories values('test','Forbidden');raise exception 'Direct insert';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000091',true);
+ begin perform public.mk_admin_category_create('  ');raise exception 'Empty name';exception when invalid_parameter_value then null;end;
+ r=public.mk_admin_category_create(' Ігрові аксесуари ');
+ if r->>'name'<>'Ігрові аксесуари' then raise exception 'Name not trimmed';end if;
+ begin perform public.mk_admin_category_create('Ігрові аксесуари');raise exception 'Duplicate';exception when unique_violation then null;end;
+ item=jsonb_build_object('product_id','qa-category','variant_key','','name','Gamepad','variant','','photo','','warranty','','price',200,'stock',3,'published',false,'category',r->>'id','description','Demo');
+ perform public.mk_admin_product_save(item,null);perform public.mk_admin_product_save(item||'{"published":true}',0);
+ if not exists(select 1 from jsonb_array_elements(public.mk_storefront()->'items') x where x->>'product_id'='qa-category' and x->>'category'=r->>'id') then raise exception 'Custom category product absent';end if;
+ if not exists(select 1 from jsonb_array_elements(public.mk_storefront()->'categories') x where x->>'id'=r->>'id') then raise exception 'Public category absent';end if;
+end $$;
+reset role;
+set local role anon;
+do $$ begin perform public.mk_storefront();begin perform public.mk_admin_category_create('No');raise exception 'Anon write';exception when insufficient_privilege then null;end;end $$;
+rollback;

@@ -304,9 +304,10 @@ function promoDeadline(offer){const t=promoTime(offer.endAt);return t===null?"":
 function currentPrice(id,key){const p=PRODUCTS.find(x=>x.id===id);if(!p)return 0;const offer=activePromo(id);return offer?Number(offer.salePrice):(variantByKey(id,key)?.price??p.price)}
 
 function productCard(p){
- return '<article class="product"><button class="fav-btn '+(favorites.includes(p.id)?'active':'')+'" data-favorite="'+p.id+'" type="button" aria-label="Обране" title="Обране">'+(favorites.includes(p.id)?'♥':'♡')+'</button><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><div class="eyebrow">'+esc(categoryNames[p.category])+'</div><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="productmeta"><span class="price">'+money(currentPrice(p.id))+'</span><span class="demo-price">'+(currentPrice(p.id)!==p.price?"🔥 акція · ":"")+'демо-ціна для тесту</span></div><button data-add="'+p.id+'">Додати в кошик</button></div></article>';
+ return '<article class="product"><button class="fav-btn '+(favorites.includes(p.id)?'active':'')+'" data-favorite="'+p.id+'" type="button" aria-label="Обране" title="Обране">'+(favorites.includes(p.id)?'♥':'♡')+'</button><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><div class="eyebrow">'+esc(categoryNames[p.category])+'</div><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="productmeta"><span class="price">'+money(currentPrice(p.id))+'</span><span class="demo-price">'+(currentPrice(p.id)!==p.price?"🔥 акція · ":"")+'демо-ціна для тесту</span></div>'+(['owner','administrator'].includes(adminRole)?'<button type="button" class="btn alt" data-edit-product="'+esc(p.id)+'">Редагувати товар</button>':'')+'<button data-add="'+p.id+'">Додати в кошик</button></div></article>';
 }
 function bindAdd(root=document){
+ root.querySelectorAll("[data-edit-product]").forEach(b=>b.onclick=()=>catalogOpenProduct(b.dataset.editProduct));
  root.querySelectorAll("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});
  root.querySelectorAll("[data-open-product]").forEach(el=>{el.onclick=()=>openProduct(el.dataset.openProduct);el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openProduct(el.dataset.openProduct)}}});
  root.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const p=PRODUCTS.find(x=>x.id===b.dataset.add);if(!p)return;if(variantsFor(p.id).length){openProduct(p.id);return}if(addCartProduct(p.id)){b.textContent="✓ Додано";setTimeout(()=>b.textContent="Додати в кошик",800)}});
@@ -573,7 +574,8 @@ async function cloudCancel(id){
  try{if(!await cloudConfirmCancel(id))return;const receipt=cloudReceipts().find(r=>r.request===cloudGuestRequests[order.serverId]);const updated=await cloudRpc("mk_cancel_order",{p_id:order.serverId,p_access_token:receipt?.token||null});cloudOrders=cloudOrders.map(x=>x.id===id?updated:x);renderOrders();await cloudLoadCatalog()}catch(e){cloudError(e)}finally{cloudCancelBusy=false}
 }
 // Admin capabilities are checked again by every database write and Storage upload.
-let adminEpoch=0,adminRole=null,adminRevision=null,adminBusy=false,bannerEpoch=0;
+var adminRole=null;
+let adminEpoch=0,adminRevision=null,adminBusy=false,bannerEpoch=0;
 const adminPanel=document.createElement('section');
 adminPanel.className='section';
 adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування магазином</summary>
@@ -591,7 +593,7 @@ adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування м�
 <button class="btn" type="submit">Зберегти банер</button></form></div></details>`;
 document.getElementById('account').append(adminPanel);
 const adminEl=id=>document.getElementById(id);
-function adminReset(){if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
+function adminReset(){adminRole=null;if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
 function adminDenied(e){return e?.code==='42501'||['401','403'].includes(String(e?.statusCode||e?.status||''))}
 function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':adminDenied(e)?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
 function adminImageUrl(value){try{if(/[\s\\<>"]/u.test(value))return '';const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
@@ -612,7 +614,7 @@ async function adminLoad(){
   adminEl('adminImage').value=row.image_url;adminEl('adminPublished').checked=row.published;adminEl('adminFile').value='';adminPreview();
   adminEl('adminBannerForm').hidden=false;adminEl('adminStatus').textContent='Доступ: '+(role==='owner'?'Owner':'Адміністратор')+'. '+(row.published?'Банер опубліковано.':'Банер приховано.');
   if(typeof catalogAdminLoad==='function')await catalogAdminLoad();
- }catch(e){if(epoch===adminEpoch){adminRole=null;adminRevision=null;adminEl('adminStatus').textContent=adminMessage(e)}}
+ }catch(e){if(epoch===adminEpoch){adminRole=null;adminRevision=null;if(typeof catalogReset==='function')catalogReset();adminEl('adminStatus').textContent=adminMessage(e)}}
 }
 async function cloudLoadBanner(client=cloudClient){
  const epoch=++bannerEpoch;
@@ -655,6 +657,7 @@ adminEl('adminBannerForm').onsubmit=async e=>{
 let catalogRows=[],catalogOffers=[],catalogSelected=null,catalogBusy=false,catalogEpoch=0,storefrontEpoch=0;
 function applyStorefront(data){
  if(!data||!Array.isArray(data.items)||!Array.isArray(data.promotions))throw new Error('Некоректний каталог сервера');
+ if(Array.isArray(data.categories))applyCategories(data.categories);
  const grouped=new Map();
  for(const row of data.items){
   if(!row.published||!categoryNames[row.category])continue;
@@ -674,13 +677,13 @@ function applyStorefront(data){
 async function refreshStorefront(client=cloudClient){
  const epoch=++storefrontEpoch;const result=await client.rpc('mk_storefront');
  if(result.error)throw result.error;if(epoch!==storefrontEpoch)return;
- const modal=adminEl('productModal'),opened=modal.classList.contains('open')?adminEl('productModalAdd').dataset.id:null,selected=adminEl('productVariantSelect')?.value;applyStorefront(result.data);renderCart();renderCategory();renderPromos();renderWaiting();renderFavorites();if(opened){if(PRODUCTS.some(p=>p.id===opened)){openProduct(opened);const select=adminEl('productVariantSelect');if(select&&variantByKey(opened,selected)){select.value=selected;select.onchange()}}else closeProduct()}
+ const modal=adminEl('productModal'),opened=modal.classList.contains('open')?adminEl('productModalAdd').dataset.id:null,selected=adminEl('productVariantSelect')?.value;applyStorefront(result.data);if(location.hash.startsWith("#category/")){const slug=location.hash.slice(10);if(Object.hasOwn(categoryNames,slug)&&currentCategory!==slug)openCategory(slug,false)}renderCart();renderCategory();renderPromos();renderWaiting();renderFavorites();if(opened){if(PRODUCTS.some(p=>p.id===opened)){openProduct(opened);const select=adminEl('productVariantSelect');if(select&&variantByKey(opened,selected)){select.value=selected;select.onchange()}}else closeProduct()}
 }
 function catalogAdminInit(){
  const section=document.createElement('div');section.id='catalogAdmin';section.hidden=true;section.className='card';
  section.innerHTML=`<h2>Товари та акції</h2><p class="muted">Каталог і замовлення поки працюють у деморежимі. Залишок — фізична кількість; резерви та остання одиниця захищені сервером.</p>
  <p id="catalogStatus" role="status" aria-live="polite"></p>
- <div class="buttons"><button class="btn" type="button" id="catalogNew">Додати товар</button><button class="btn alt" type="button" id="catalogRefresh">Оновити список</button></div>
+ <form id="categoryCreateForm"><label>Назва нової категорії<input id="categoryCreateName" maxlength="100" required placeholder="Наприклад: Ігрові аксесуари"></label><button class="btn" type="submit">Додати категорію</button><p id="categoryCreateStatus" role="status"></p></form><div class="buttons"><button class="btn" type="button" id="catalogNew">Додати товар</button><button class="btn alt" type="button" id="catalogRefresh">Оновити список</button></div>
  <label>Пошук товару<input id="catalogSearch" type="search" placeholder="Назва або код"></label>
  <label>Товар / варіант<select id="catalogSelect" size="6" aria-label="Товар або варіант"></select></label>
  <form id="catalogForm" hidden>
@@ -706,9 +709,12 @@ function catalogAdminInit(){
  <label>Закінчення (твій місцевий час)<input id="promotionEnd" type="datetime-local"></label>
  <label class="admin-publish"><input id="promotionPublished" type="checkbox"> Увімкнути акцію</label>
  <button class="btn" type="submit">Зберегти акцію</button></form>`;
- adminEl('adminDetails').append(section);
+ adminEl('products').querySelector('.section').prepend(section);
+ const tools=document.createElement('div');tools.id='categoryAdminTools';tools.hidden=true;tools.className='buttons';tools.innerHTML='<button class="btn" id="categoryAddProduct" type="button">Додати товар у категорію</button><button class="btn alt" id="categoryManage" type="button">Керувати товарами</button>';adminEl('category').querySelector('.category-toolbar').after(tools);
+ adminEl('categoryAddProduct').onclick=()=>catalogOpenEditor(null,currentCategory);adminEl('categoryManage').onclick=()=>{go('products');adminEl('catalogAdmin').scrollIntoView({block:'start'})};
  adminEl('catalogCategory').innerHTML=Object.entries(categoryNames).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
- adminEl('catalogNew').onclick=()=>catalogEdit(null);
+ adminEl('catalogNew').onclick=()=>catalogOpenEditor(null);
+ adminEl('categoryCreateForm').onsubmit=categoryCreate;
  adminEl('catalogRefresh').onclick=()=>catalogAdminLoad();
  adminEl('catalogSearch').oninput=catalogRenderList;
  adminEl('catalogSelect').onchange=()=>{const index=Number(adminEl('catalogSelect').value);if(Number.isInteger(index)&&catalogRows[index])catalogEdit(catalogRows[index])};
@@ -717,13 +723,13 @@ function catalogAdminInit(){
  adminEl('catalogForm').onsubmit=catalogSave;
  adminEl('promotionForm').onsubmit=promotionSave;
 }
-function catalogReset(){catalogEpoch++;catalogRows=[];catalogOffers=[];catalogSelected=null;catalogBusy=false;const el=adminEl('catalogAdmin');if(!el)return;el.hidden=true;adminEl('catalogForm').reset();adminEl('promotionForm').reset();adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogSelect').innerHTML='';adminEl('catalogPreview').hidden=true;adminEl('catalogPreview').removeAttribute('src');catalogControls(false)}
-function catalogControls(busy){for(const id of ['catalogForm','promotionForm'])for(const control of adminEl(id).elements)control.disabled=busy;for(const id of ['catalogNew','catalogRefresh','catalogSelect','catalogSearch'])adminEl(id).disabled=busy}
+function catalogReset(){catalogEpoch++;catalogRows=[];catalogOffers=[];catalogSelected=null;catalogBusy=false;const el=adminEl('catalogAdmin');if(!el)return;el.hidden=true;if(adminEl('categoryAdminTools'))adminEl('categoryAdminTools').hidden=true;renderCategory();renderPromos();adminEl('catalogForm').reset();adminEl('promotionForm').reset();adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogSelect').innerHTML='';adminEl('catalogPreview').hidden=true;adminEl('catalogPreview').removeAttribute('src');catalogControls(false)}
+function catalogControls(busy){for(const id of ['catalogForm','promotionForm','categoryCreateForm'])for(const control of adminEl(id).elements)control.disabled=busy;for(const id of ['catalogNew','catalogRefresh','catalogSelect','catalogSearch'])adminEl(id).disabled=busy}
 function catalogError(e){return e?.code==='40001'?'Дані вже змінилися. Скопіюй незбережений текст або адресу фото й натисни «Оновити список», потім вибери товар повторно.':adminDenied(e)?'Доступ відсутній або відкликаний.':e?.code==='22023'?'Перевір поля. Залишок має покривати резерви та останню одиницю магазину.':'Не вдалося зберегти. Перевір з’єднання та повтори.'}
 async function catalogAdminLoad(){
  if(catalogBusy)return;const epoch=++catalogEpoch;catalogSelected=null;adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogAdmin').hidden=true;
  if(!['owner','administrator'].includes(adminRole)||!cloudAccount)return;
- adminEl('catalogAdmin').hidden=false;adminEl('catalogStatus').textContent='Завантажуємо каталог…';
+ adminEl('catalogAdmin').hidden=false;adminEl('categoryAdminTools').hidden=false;renderCategory();renderPromos();adminEl('catalogStatus').textContent='Завантажуємо каталог…';
  try{const [rows,offers]=await Promise.all([cloudRpc('mk_admin_catalog_list'),cloudRpc('mk_admin_promotions')]);if(epoch!==catalogEpoch)return;if(!Array.isArray(rows)||!Array.isArray(offers))throw new Error('Invalid response');catalogRows=rows;catalogOffers=offers;catalogRenderList();adminEl('catalogStatus').textContent='Доступно варіантів: '+rows.length+'. Вибери товар або додай новий.'}
  catch(e){if(epoch===catalogEpoch){adminEl('catalogStatus').textContent=catalogError(e);if(adminDenied(e))catalogReset()}}
 }
@@ -770,6 +776,25 @@ async function promotionSave(e){
  catch(err){if(epoch===catalogEpoch){adminEl('catalogStatus').textContent=catalogError(err);if(adminDenied(err)){catalogReset();adminReset()}}}
  finally{if(epoch===catalogEpoch){catalogBusy=false;catalogControls(false)}}
 }
+
+
+function applyCategories(rows){
+ for(const row of rows)if(typeof row.id==='string'&&/^[a-z][a-z0-9_-]{0,119}$/.test(row.id)&&typeof row.name==='string')categoryNames[row.id]=row.name;
+ const grid=adminEl('products').querySelector('.category-grid');
+ for(const row of rows){if(!Object.hasOwn(categoryNames,row.id))continue;let tile=[...grid.querySelectorAll('[data-category]')].find(x=>x.dataset.category===row.id);if(!tile){tile=document.createElement('button');tile.type='button';tile.className='cat-tile';tile.dataset.category=row.id;tile.innerHTML='<span class="cat-icon">📦</span><span class="cat-name"></span><span class="cat-arrow">Відкрити →</span>';grid.append(tile)}tile.querySelector('.cat-name').textContent=row.name;tile.onclick=()=>openCategory(row.id)}
+ const select=adminEl('catalogCategory');if(select){const value=select.value;select.innerHTML=Object.entries(categoryNames).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');if(Object.hasOwn(categoryNames,value))select.value=value}
+ if(currentCategory)adminEl('categoryTitle').textContent=categoryNames[currentCategory]||'Категорія';
+}
+async function categoryCreate(e){
+ e.preventDefault();if(catalogBusy||!['owner','administrator'].includes(adminRole))return;
+ const name=adminEl('categoryCreateName').value.trim(),epoch=catalogEpoch,user=cloudAccount?.profileId;if(!name)return;
+ catalogBusy=true;catalogControls(true);adminEl('categoryCreateStatus').textContent='Зберігаємо категорію…';
+ try{const row=await cloudRpc('mk_admin_category_create',{p_name:name});if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;applyCategories([row]);adminEl('categoryCreateForm').reset();adminEl('categoryCreateStatus').textContent='Категорію «'+row.name+'» додано. Вона доступна під час редагування товарів.';await refreshStorefront()}
+ catch(err){if(epoch===catalogEpoch){adminEl('categoryCreateStatus').textContent=err?.code==='23505'?'Категорія з такою назвою вже є.':catalogError(err);if(adminDenied(err)){catalogReset();adminReset()}}}
+ finally{if(epoch===catalogEpoch){catalogBusy=false;catalogControls(false);adminEl('catalogPublished').disabled=catalogSelected?.revision==null}}
+}
+function catalogOpenEditor(row,category){if(!['owner','administrator'].includes(adminRole)||catalogBusy)return;go('products');catalogEdit(row);if(!row&&category&&Object.hasOwn(categoryNames,category))adminEl('catalogCategory').value=category;adminEl('catalogForm').scrollIntoView({block:'start',behavior:'smooth'});adminEl('catalogName').focus({preventScroll:true})}
+async function catalogOpenProduct(id){if(!['owner','administrator'].includes(adminRole))return;if(!catalogRows.length)await catalogAdminLoad();const row=catalogRows.find(r=>r.product_id===id&&r.published)||catalogRows.find(r=>r.product_id===id);if(row)catalogOpenEditor(row)}
 
 catalogAdminInit();
 PRODUCTS.forEach(p=>p.published=false);
