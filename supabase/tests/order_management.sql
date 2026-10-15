@@ -3,6 +3,7 @@ insert into auth.users(id,email) values('00000000-0000-4000-8000-000000000095','
 insert into public.mk_admin_members(user_id,role) values('00000000-0000-4000-8000-000000000095','owner');
 update public.mk_store_settings set live_orders=true;
 insert into public.mk_catalog_items(product_id,variant_key,name,price,stock,is_demo,published) values('qa-live','','Live Product',150,8,false,true);
+with demo as (insert into public.mk_orders(request_id,access_token,buyer_phone,recipient_phone,payment,payload,is_demo) values(gen_random_uuid(),gen_random_uuid(),'+380931234568','+380931234568','pickup','{}',true) returning id) insert into public.mk_order_lines select id,'qa-live','',7 from demo;
 select set_config('request.jwt.claim.sub','',true);
 set local role anon;
 do $$ declare o jsonb; begin
