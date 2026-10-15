@@ -137,10 +137,10 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000092',true);
 select public.mk_admin_catalog_save(pg_temp.item('black',0,false),3);
 reset role;
--- Non-demo inventory is read-only in this increment.
+-- Owner can edit live inventory; browser cannot alter its mode.
 update public.mk_catalog_items set is_demo=false where product_id='qa-catalog' and variant_key='black';
 set local role authenticated;
-select pg_temp.reject_save(pg_temp.item(),4,'22023');
+select public.mk_admin_catalog_save(pg_temp.item(),4);
 reset role;
 delete from public.mk_admin_members where user_id='00000000-0000-4000-8000-000000000092';
 set local role authenticated;

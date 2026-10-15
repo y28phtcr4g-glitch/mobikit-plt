@@ -100,7 +100,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 
 
 #adminDetails{min-width:0}#adminDetails summary{cursor:pointer;padding:14px 0;font-weight:700}#adminDetails .card{margin-top:8px}#adminBannerForm{display:grid;gap:16px;min-width:0}#adminBannerForm>label{display:grid;gap:7px;min-width:0}#adminBannerForm input:not([type=checkbox]),#adminBannerForm textarea{width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#adminBannerForm textarea{resize:vertical}#adminBannerForm .admin-publish{display:flex;align-items:center;gap:10px}#adminBannerForm input[type=checkbox]{width:20px;height:20px;flex:0 0 auto}#adminStatus{overflow-wrap:anywhere}#adminReload{max-width:100%;white-space:normal}#adminPreview{display:block;background:#08080e;border-radius:12px}
-#catalogAdmin{margin-top:24px;min-width:0}#catalogAdmin form{display:grid;gap:14px;margin-top:24px}#catalogAdmin label{display:grid;gap:6px;margin-top:12px;min-width:0}#catalogAdmin input:not([type=checkbox]),#catalogAdmin select,#catalogAdmin textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#catalogSelect{min-height:180px}#catalogPreview{width:100%;max-height:280px;object-fit:contain}#catalogAdmin .admin-publish{display:flex;align-items:center}#catalogAdmin input[type=checkbox]{width:20px;height:20px}#catalogIdentity,#catalogStatus{overflow-wrap:anywhere}
+#catalogAdmin{margin-top:24px;min-width:0}#catalogAdmin form{display:grid;gap:14px;margin-top:24px}#catalogAdmin label{display:grid;gap:6px;margin-top:12px;min-width:0}#catalogAdmin input:not([type=checkbox]),#catalogAdmin select,#catalogAdmin textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#catalogSelect{min-height:180px}#catalogPreview{width:100%;max-height:280px;object-fit:contain}#catalogAdmin .admin-publish{display:flex;align-items:center}#catalogAdmin input[type=checkbox]{width:20px;height:20px}#catalogIdentity,#catalogStatus{overflow-wrap:anywhere}#storeOrders input{box-sizing:border-box;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#storeOrders label{display:grid;gap:6px;margin:14px 0}#storeOrders .order-card{overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -126,6 +126,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 "use strict";
 const CLOUD_MODE=(()=>{try{return new URLSearchParams(location.search).get("cloud")!=="0"||location.hash.includes("access_token=")||location.hash.includes("error_description=")||localStorage.getItem("mobikitCloudPreview")==="1"}catch(e){return false}})();
 const SUPABASE_URL="https://iobkeqfpwelvsntxqurt.supabase.co",SUPABASE_KEY="sb_publishable_jMg1IOTqc9n4zCqE7Dp1VA_jYaPCMn5";
+var storeLive=false;
 let cloudClient=null,cloudReady=null,cloudAccount=null,cloudOrders=[],cloudFavorites=[],cloudWaiting=[],cloudAuthVersion=0,cloudPrefsBusy=false,cloudCancelBusy=false,cloudGuestRequests={};
 function notify(message){
  let notice=document.getElementById("siteNotice");
@@ -304,7 +305,7 @@ function promoDeadline(offer){const t=promoTime(offer.endAt);return t===null?"":
 function currentPrice(id,key){const p=PRODUCTS.find(x=>x.id===id);if(!p)return 0;const offer=activePromo(id);return offer?Number(offer.salePrice):(variantByKey(id,key)?.price??p.price)}
 
 function productCard(p){
- return '<article class="product"><button class="fav-btn '+(favorites.includes(p.id)?'active':'')+'" data-favorite="'+p.id+'" type="button" aria-label="Обране" title="Обране">'+(favorites.includes(p.id)?'♥':'♡')+'</button><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><div class="eyebrow">'+esc(categoryNames[p.category])+'</div><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="productmeta"><span class="price">'+money(currentPrice(p.id))+'</span><span class="demo-price">'+(currentPrice(p.id)!==p.price?"🔥 акція · ":"")+'демо-ціна для тесту</span></div>'+(['owner','administrator'].includes(adminRole)?'<button type="button" class="btn alt" data-edit-product="'+esc(p.id)+'">Редагувати товар</button>':'')+'<button data-add="'+p.id+'">Додати в кошик</button></div></article>';
+ return '<article class="product"><button class="fav-btn '+(favorites.includes(p.id)?'active':'')+'" data-favorite="'+p.id+'" type="button" aria-label="Обране" title="Обране">'+(favorites.includes(p.id)?'♥':'♡')+'</button><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><div class="eyebrow">'+esc(categoryNames[p.category])+'</div><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="productmeta"><span class="price">'+money(currentPrice(p.id))+'</span><span class="demo-price">'+(currentPrice(p.id)!==p.price?"🔥 акція · ":"")+(storeLive?'':'демо-ціна для тесту')+'</span></div>'+(['owner','administrator'].includes(adminRole)?'<button type="button" class="btn alt" data-edit-product="'+esc(p.id)+'">Редагувати товар</button>':'')+'<button data-add="'+p.id+'">Додати в кошик</button></div></article>';
 }
 function bindAdd(root=document){
  root.querySelectorAll("[data-edit-product]").forEach(b=>b.onclick=()=>catalogOpenProduct(b.dataset.editProduct));
@@ -368,7 +369,7 @@ function renderCart(){
  const box=document.getElementById("cartItems");
  if(!cart.length){box.innerHTML='<p class="muted">Кошик порожній.</p>';return}
  let total=0,blocked=false;
- box.innerHTML=cart.map(item=>{const p=PRODUCTS.find(x=>x.id===item.id);if(!isCatalogVisible(p)){blocked=true;return '<div class="cartrow"><span>Товар більше не доступний</span><button class="btn alt" data-remove="'+esc(lineKey(item.id,item.variantKey))+'">Видалити</button></div>';}const v=variantByKey(p.id,item.variantKey),s=demoStockFor(p,item.variantKey);if(!s.orderable||item.qty>s.stock-1)blocked=true;total+=currentPrice(p.id,item.variantKey)*item.qty;return '<div class="cartrow"><div><strong>'+esc(p.name)+'</strong>'+(v?'<div class="muted">'+esc(v.options)+'</div>':'')+'<div class="muted">'+money(currentPrice(p.id,item.variantKey))+' × '+item.qty+' · '+esc(s.label)+'</div></div><div><button class="btn alt" data-minus="'+esc(lineKey(p.id,item.variantKey))+'">−</button> <span class="badge">'+item.qty+'</span> <button class="btn alt" data-plus="'+esc(lineKey(p.id,item.variantKey))+'">+</button> <button class="btn alt" data-remove="'+esc(lineKey(p.id,item.variantKey))+'">Видалити</button></div></div>'}).join("")+'<div class="cartrow"><strong>Разом</strong><strong class="price">'+money(total)+'</strong></div>'+(blocked?'<p class="muted">⚠️ У кошику є варіант, який уже не можна замовити онлайн. Зменш кількість або видали його.</p>':'')+'<p class="demo-price">Ціни й залишки в цьому демо тестові.</p>';
+ box.innerHTML=cart.map(item=>{const p=PRODUCTS.find(x=>x.id===item.id);if(!isCatalogVisible(p)){blocked=true;return '<div class="cartrow"><span>Товар більше не доступний</span><button class="btn alt" data-remove="'+esc(lineKey(item.id,item.variantKey))+'">Видалити</button></div>';}const v=variantByKey(p.id,item.variantKey),s=demoStockFor(p,item.variantKey);if(!s.orderable||item.qty>s.stock-1)blocked=true;total+=currentPrice(p.id,item.variantKey)*item.qty;return '<div class="cartrow"><div><strong>'+esc(p.name)+'</strong>'+(v?'<div class="muted">'+esc(v.options)+'</div>':'')+'<div class="muted">'+money(currentPrice(p.id,item.variantKey))+' × '+item.qty+' · '+esc(s.label)+'</div></div><div><button class="btn alt" data-minus="'+esc(lineKey(p.id,item.variantKey))+'">−</button> <span class="badge">'+item.qty+'</span> <button class="btn alt" data-plus="'+esc(lineKey(p.id,item.variantKey))+'">+</button> <button class="btn alt" data-remove="'+esc(lineKey(p.id,item.variantKey))+'">Видалити</button></div></div>'}).join("")+'<div class="cartrow"><strong>Разом</strong><strong class="price">'+money(total)+'</strong></div>'+(blocked?'<p class="muted">⚠️ У кошику є варіант, який уже не можна замовити онлайн. Зменш кількість або видали його.</p>':'')+(storeLive?'':'<p class="demo-price">Ціни й залишки в цьому демо тестові.</p>');
  const findLine=k=>cart.find(x=>lineKey(x.id,x.variantKey)===k);
  box.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const i=findLine(b.dataset.plus);if(i)addCartProduct(i.id,i.variantKey)});
  box.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>{const i=findLine(b.dataset.minus);if(!i)return;const prev=cart.map(x=>({...x}));i.qty--;if(i.qty<=0)cart=cart.filter(x=>x!==i);if(!saveCart()){cart=prev;return}renderCart()});
@@ -392,7 +393,7 @@ function renderPromos(){
  if(PROMO_CONFIG.bannerImage){banner.style.backgroundImage='url("'+PROMO_CONFIG.bannerImage.replace(/"/g,"%22")+'")';banner.classList.add("has-image")}else{banner.style.backgroundImage="";banner.classList.remove("has-image")}
  const list=PROMO_CONFIG.items.map((offer,index)=>{const p=PRODUCTS.find(x=>x.id===offer.id);return isCatalogVisible(p)&&promoState(offer)==="active"?{p,offer,index}:null}).filter(Boolean);
  const grid=document.getElementById("promoProducts"),empty=document.getElementById("promoEmpty");
- grid.innerHTML=list.map(({p,offer})=>{const sale=Number(offer.salePrice),pct=p.price>sale?Math.round((1-sale/p.price)*100):0,until=promoDeadline(offer);return '<article class="product"><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><span class="sale-chip">🔥 АКЦІЯ'+(pct?' −'+pct+'%':'')+'</span><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="sale-prices"><span class="old-price">'+money(p.price)+'</span><span class="sale-price">'+money(sale)+'</span></div>'+(until?'<div class="muted" style="margin-top:7px">⏳ Діє до '+esc(until)+'</div>':'')+'<span class="demo-price">демо-ціни для тесту</span><button data-add="'+p.id+'">Додати в кошик</button></div></article>'}).join("");
+ grid.innerHTML=list.map(({p,offer})=>{const sale=Number(offer.salePrice),pct=p.price>sale?Math.round((1-sale/p.price)*100):0,until=promoDeadline(offer);return '<article class="product"><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><span class="sale-chip">🔥 АКЦІЯ'+(pct?' −'+pct+'%':'')+'</span><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="sale-prices"><span class="old-price">'+money(p.price)+'</span><span class="sale-price">'+money(sale)+'</span></div>'+(until?'<div class="muted" style="margin-top:7px">⏳ Діє до '+esc(until)+'</div>':'')+(storeLive?'':'<span class="demo-price">демо-ціни для тесту</span>')+'<button data-add="'+p.id+'">Додати в кошик</button></div></article>'}).join("");
  empty.hidden=!!list.length;grid.hidden=!list.length;
  if(!list.length)empty.innerHTML='<strong>Зараз активних акцій немає 😼</strong><p class="muted">Тут з’являться лише пропозиції, які магазин додасть вручну на визначений термін.</p>';
  bindAdd(grid);
@@ -417,6 +418,7 @@ function go(id,push=true){
  if(push&&location.hash!=="#"+id)history.pushState(null,"","#"+id);window.scrollTo(0,0);
 }
 function route(){
+ if(location.hash==="#storeOrders"&&["owner","administrator"].includes(adminRole)){goStoreOrders();return}
  closeProduct();deactivateModal(document.getElementById("reviewModal"));
  const h=location.hash.slice(1)||"home";
  if(h.startsWith("category/")){const slug=h.split("/")[1];if(categoryNames[slug])return openCategory(slug,false)}
@@ -557,7 +559,7 @@ async function cloudCreateOrder(submit,unlock,type,buyerPhone,buyerName){
   if(order.ownerKey===(cloudAccount?.profileId||"guest")&&!cloudOrders.some(x=>x.id===order.id))cloudOrders.unshift(order);
   const previous=cart;cart=cart.map(x=>{const sent=snapshot.find(y=>y.id===x.id&&(y.variantKey||"")===(x.variantKey||""));return {...x,qty:x.qty-(sent?.qty||0)}}).filter(x=>x.qty>0);
   if(!saveCart()){cart=previous;renderCart();renderOrders();notify("Замовлення збережене на сервері. Кошик не вдалося очистити; повторна спроба з тим самим кошиком поверне це замовлення.");return}
-  localStorage.removeItem(key);renderCart();renderOrders();document.getElementById("checkoutDemo").hidden=true;notify("Демо-замовлення "+order.id+" збережене на сервері. Магазин не отримує заявку на продаж.");go("account");
+  localStorage.removeItem(key);renderCart();renderOrders();document.getElementById("checkoutDemo").hidden=true;notify(order.isDemo?"Демо-замовлення "+order.id+" збережене на сервері.":"Замовлення "+order.id+" прийняте магазином. Стеж за статусом у кабінеті.");go("account");
   await cloudLoadCatalog();
  }catch(e){cloudError(e)}finally{unlock()}
 }
@@ -593,7 +595,7 @@ adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування м�
 <button class="btn" type="submit">Зберегти банер</button></form></div></details>`;
 document.getElementById('account').append(adminPanel);
 const adminEl=id=>document.getElementById(id);
-function adminReset(){adminRole=null;if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
+function adminReset(){if(typeof orderAdminReset==='function')orderAdminReset();adminRole=null;if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
 function adminDenied(e){return e?.code==='42501'||['401','403'].includes(String(e?.statusCode||e?.status||''))}
 function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':adminDenied(e)?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
 function adminImageUrl(value){try{if(/[\s\\<>"]/u.test(value))return '';const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
@@ -613,7 +615,7 @@ async function adminLoad(){
   adminRevision=row.revision;adminEl('adminTitle').value=row.title;adminEl('adminSubtitle').value=row.subtitle;
   adminEl('adminImage').value=row.image_url;adminEl('adminPublished').checked=row.published;adminEl('adminFile').value='';adminPreview();
   adminEl('adminBannerForm').hidden=false;adminEl('adminStatus').textContent='Доступ: '+(role==='owner'?'Owner':'Адміністратор')+'. '+(row.published?'Банер опубліковано.':'Банер приховано.');
-  if(typeof catalogAdminLoad==='function')await catalogAdminLoad();
+  if(typeof catalogAdminLoad==='function')await catalogAdminLoad();if(typeof orderAdminLoad==='function')await orderAdminLoad();
  }catch(e){if(epoch===adminEpoch){adminRole=null;adminRevision=null;if(typeof catalogReset==='function')catalogReset();adminEl('adminStatus').textContent=adminMessage(e)}}
 }
 async function cloudLoadBanner(client=cloudClient){
@@ -657,6 +659,7 @@ adminEl('adminBannerForm').onsubmit=async e=>{
 let catalogRows=[],catalogOffers=[],catalogSelected=null,catalogBusy=false,catalogEpoch=0,storefrontEpoch=0;
 function applyStorefront(data){
  if(!data||!Array.isArray(data.items)||!Array.isArray(data.promotions))throw new Error('Некоректний каталог сервера');
+ storeLive=data.liveOrders===true;syncStoreMode();
  if(Array.isArray(data.categories))applyCategories(data.categories);
  const grouped=new Map();
  for(const row of data.items){
@@ -681,7 +684,7 @@ async function refreshStorefront(client=cloudClient){
 }
 function catalogAdminInit(){
  const section=document.createElement('div');section.id='catalogAdmin';section.hidden=true;section.className='card';
- section.innerHTML=`<h2>Товари та акції</h2><p class="muted">Каталог і замовлення поки працюють у деморежимі. Залишок — фізична кількість; резерви та остання одиниця захищені сервером.</p>
+ section.innerHTML=`<h2>Товари та акції</h2><p class="muted" id="catalogModeNote">Каталог і замовлення поки працюють у деморежимі. Залишок — фізична кількість; резерви та остання одиниця захищені сервером.</p>
  <p id="catalogStatus" role="status" aria-live="polite"></p>
  <form id="categoryCreateForm"><label>Назва нової категорії<input id="categoryCreateName" maxlength="100" required placeholder="Наприклад: Ігрові аксесуари"></label><button class="btn" type="submit">Додати категорію</button><p id="categoryCreateStatus" role="status"></p></form><div class="buttons"><button class="btn" type="button" id="catalogNew">Додати товар</button><button class="btn alt" type="button" id="catalogRefresh">Оновити список</button></div>
  <label>Пошук товару<input id="catalogSearch" type="search" placeholder="Назва або код"></label>
@@ -795,6 +798,48 @@ async function categoryCreate(e){
 }
 function catalogOpenEditor(row,category){if(!['owner','administrator'].includes(adminRole)||catalogBusy)return;go('products');catalogEdit(row);if(!row&&category&&Object.hasOwn(categoryNames,category))adminEl('catalogCategory').value=category;adminEl('catalogForm').scrollIntoView({block:'start',behavior:'smooth'});adminEl('catalogName').focus({preventScroll:true})}
 async function catalogOpenProduct(id){if(!['owner','administrator'].includes(adminRole))return;if(!catalogRows.length)await catalogAdminLoad();const row=catalogRows.find(r=>r.product_id===id&&r.published)||catalogRows.find(r=>r.product_id===id);if(row)catalogOpenEditor(row)}
+
+
+let managedOrders=[],orderAdminEpoch=0,orderAdminBusy=false;
+function syncStoreMode(){
+ const note=adminEl('catalogModeNote');if(note)note.textContent=storeLive?'Магазин приймає замовлення. Залишок включає зарезервовані позиції; проданий товар списується після завершення замовлення.':'Каталог і замовлення у деморежимі.';
+ const info=document.querySelector('#checkoutDemo .card:last-child > p.muted');if(info)info.textContent=storeLive?'Замовлення надійде магазину. Оплата при отриманні або в магазині.':'Демо-замовлення зберігається на сервері та не є заявкою на продаж.';
+ adminEl('createDemoOrder').textContent=storeLive?'Підтвердити замовлення':'Створити демо-замовлення';
+ const title=document.querySelector('#checkoutDemo h3');if(title)title.textContent=storeLive?'Оформлення замовлення':'Демо-оформлення';
+ const auth=document.querySelector('.demo-auth-note');if(auth)auth.textContent='Вхід підтверджується листом на твою пошту.';
+ document.title=storeLive?'MOBIKIT PLT':'MOBIKIT PLT — Demo';
+ const footer=[...document.querySelectorAll('footer, .footer')].find(x=>x.textContent.includes('©'));if(footer&&storeLive)for(const el of footer.querySelectorAll('*'))if(el.children.length===0&&el.textContent.includes('©'))el.textContent='© MOBIKIT PLT';
+}
+function orderAdminInit(){
+ const section=document.createElement('section');section.id='storeOrders';section.className='page';section.innerHTML='<div class="section"><h2>Замовлення магазину</h2><p class="muted">Статуси й ТТН вносить магазин. Автоматичне відстеження Нової пошти ще не підключене. Завершення продажу списує кількість зі складу.</p><button class="btn" id="storeOrdersRefresh" type="button">Оновити замовлення</button><label>Пошук замовлення<input id="storeOrdersSearch" type="search" placeholder="Номер, телефон або отримувач"></label><p role="status" id="storeOrdersStatus"></p><div id="storeOrdersList"></div></div>';adminEl('products').after(section);
+ const nav=document.querySelector('.nav')||adminEl('products').parentElement.querySelector('[aria-label="Основна навігація"]');
+ const button=document.createElement('button');button.className='navbtn';button.id='storeOrdersNav';button.hidden=true;button.type='button';button.textContent='Замовлення магазину';button.onclick=()=>{goStoreOrders();orderAdminLoad()};(nav||document.querySelector('[data-page="products"]').parentElement).append(button);
+ adminEl('storeOrdersRefresh').onclick=orderAdminLoad;adminEl('storeOrdersSearch').oninput=orderAdminRender;
+}
+function goStoreOrders(){closeProduct();document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='storeOrders'));document.querySelectorAll('[data-page]').forEach(b=>b.classList.remove('active'));if(location.hash!=='#storeOrders')history.pushState(null,'','#storeOrders');window.scrollTo(0,0)}
+function orderAdminReset(){orderAdminEpoch++;managedOrders=[];orderAdminBusy=false;const nav=adminEl('storeOrdersNav');if(nav)nav.hidden=true;if(adminEl('storeOrdersList'))adminEl('storeOrdersList').replaceChildren();if(adminEl('storeOrders')?.classList.contains('active'))go('home')}
+async function orderAdminLoad(){
+ if(orderAdminBusy)return;
+ if(!['owner','administrator'].includes(adminRole)||!cloudAccount)return;const epoch=++orderAdminEpoch;adminEl('storeOrdersNav').hidden=false;if(location.hash==='#storeOrders')goStoreOrders();adminEl('storeOrdersStatus').textContent='Завантажуємо замовлення…';
+ try{const rows=await cloudRpc('mk_admin_orders');if(epoch!==orderAdminEpoch)return;if(!Array.isArray(rows))throw new Error();managedOrders=rows;orderAdminRender();adminEl('storeOrdersStatus').textContent='Показано '+rows.length+' останніх замовлень.'}
+ catch(e){if(epoch===orderAdminEpoch){adminEl('storeOrdersStatus').textContent='Не вдалося отримати замовлення. Спробуй оновити.';if(adminDenied(e)){orderAdminReset();adminReset()}}}
+}
+function orderAdminRender(){
+ const q=adminEl('storeOrdersSearch').value.trim().toLocaleLowerCase();const rows=managedOrders.filter(o=>(o.id+' '+o.buyerPhone+' '+o.delivery?.phone+' '+o.delivery?.recipient).toLocaleLowerCase().includes(q));
+ adminEl('storeOrdersList').innerHTML=rows.map(o=>{const steps=o.payment==='pickup'?['Створено','Підтверджено','Комплектується','Готове до самовивозу','Видано','Завершено']:['Створено','Підтверджено','Комплектується','Укомплектовано','Передано НП','Отримано'];return '<article class="order-card"><h3>'+esc(o.id)+'</h3><p>'+esc(o.date)+' · '+(o.isDemo?'Демо':'Замовлення магазину')+'</p><strong>'+esc(o.status)+'</strong><p>'+esc(o.delivery?.recipient)+' · '+esc(o.delivery?.phone||o.buyerPhone)+'</p><p>'+esc(o.payment==='pickup'?'Самовивіз':(o.delivery?.city+' · '+o.delivery?.point))+'</p>'+(o.delivery?.comment?'<p>Коментар: '+esc(o.delivery.comment)+'</p>':'')+(o.items||[]).map(orderProductHtml).join('')+'<p><strong>Разом: '+money(o.total)+'</strong></p>'+(o.ttn?'<p>ТТН: '+esc(o.ttn)+'</p>':'')+(o.payment==='pickup'&&o.step===3&&!o.finalState?'<p>'+esc(pickupHoldText(o))+'</p>':'')+(!o.finalState?'<div class="buttons"><button class="btn" data-order-next="'+esc(o.serverId)+'">'+esc(steps[o.step+1]||'Завершити')+'</button>'+(o.step<4?'<button class="btn alt" data-store-cancel="'+esc(o.serverId)+'">Скасувати замовлення</button>':'')+(o.payment==='cod'&&o.step===4?'<button class="btn alt" data-store-return="'+esc(o.serverId)+'">Повернення отримано магазином</button>':'')+'</div>'+(o.payment==='cod'&&o.step<4?'<form data-order-ttn="'+esc(o.serverId)+'"><label>ТТН Нової пошти<input name="ttn" inputmode="numeric" pattern="[0-9]{14}" maxlength="14" required value="'+esc(o.ttn||'')+'"></label><button type="submit" class="btn alt">Зберегти ТТН</button></form>':''):'<p>Закрите: '+esc(o.finalState)+'</p>')+'</article>'}).join('')||'<p>Замовлень за цим запитом немає.</p>';
+ adminEl('storeOrdersList').querySelectorAll('[data-order-next]').forEach(b=>b.onclick=()=>orderAdminUpdate(b.dataset.orderNext,'next'));
+ adminEl('storeOrdersList').querySelectorAll('[data-store-cancel]').forEach(b=>b.onclick=()=>{if(confirm('Скасувати це замовлення та звільнити резерв?'))orderAdminUpdate(b.dataset.storeCancel,'cancel')});
+ adminEl('storeOrdersList').querySelectorAll('[data-store-return]').forEach(b=>b.onclick=()=>{if(confirm('Посилка вже фізично повернулась у магазин? Резерв буде звільнено.'))orderAdminUpdate(b.dataset.storeReturn,'return')});
+ adminEl('storeOrdersList').querySelectorAll('[data-order-ttn]').forEach(f=>f.onsubmit=e=>{e.preventDefault();orderAdminUpdate(f.dataset.orderTtn,'ttn',f.elements.ttn.value)});
+}
+async function orderAdminUpdate(id,action,ttn=null){
+ if(orderAdminBusy||!['owner','administrator'].includes(adminRole))return;const row=managedOrders.find(o=>o.serverId===id);if(!row)return;const epoch=orderAdminEpoch;orderAdminBusy=true;adminEl('storeOrdersList').querySelectorAll('button,input').forEach(x=>x.disabled=true);
+ try{const updated=await cloudRpc('mk_admin_order_update',{p_id:id,p_revision:row.revision,p_action:action,p_ttn:ttn});if(epoch!==orderAdminEpoch)return;managedOrders=managedOrders.map(o=>o.serverId===id?updated:o);orderAdminRender();adminEl('storeOrdersStatus').textContent='Замовлення оновлено.';await refreshStorefront();await cloudLoadOrders()}
+ catch(e){if(epoch===orderAdminEpoch){adminEl('storeOrdersStatus').textContent=e?.code==='40001'?'Замовлення вже змінилося. Онови список.':e?.code==='22023'?'Перевір ТТН або поточний етап. Перед відправкою потрібна ТТН із 14 цифр.':'Не вдалося оновити замовлення.';if(adminDenied(e)){orderAdminReset();adminReset()}}}
+ finally{if(epoch===orderAdminEpoch){orderAdminBusy=false;adminEl('storeOrdersList').querySelectorAll('button,input').forEach(x=>x.disabled=false)}}
+}
+orderAdminInit();
+setInterval(()=>{if(adminEl('storeOrders').classList.contains('active'))orderAdminLoad()},60000);
 
 catalogAdminInit();
 PRODUCTS.forEach(p=>p.published=false);
