@@ -734,7 +734,7 @@ function catalogEdit(row){
  for(const [field,key] of Object.entries({Name:'name',Category:'category',Description:'description',Variant:'variant',Price:'price',Stock:'stock',Warranty:'warranty',Photo:'photo'}))adminEl('catalog'+field).value=r[key]??'';
  adminEl('catalogPublished').checked=!!r.published;adminEl('catalogPublished').disabled=r.revision==null;
  adminEl('catalogIdentity').textContent=r.revision==null?'Новий товар / варіант: спочатку збережи чернетку.':'Код: '+r.product_id+(r.variant_key?' / '+r.variant_key:'');
- adminEl('catalogReserved').textContent='Зарезервовано: '+(r.reserved||0)+'. Доступно онлайн: '+(r.orderable||0)+'.';
+ adminEl('catalogReserved').textContent=r.orderable==null?'Онови список, щоб перевірити актуальні резерви й доступний залишок.':'Зарезервовано: '+(r.reserved||0)+'. Доступно онлайн: '+r.orderable+'.';
  adminEl('catalogForm').hidden=false;adminEl('catalogAddVariant').hidden=r.revision==null;catalogPreview();
  const offer=catalogOffers.find(p=>p.product_id===r.product_id);adminEl('promotionForm').reset();adminEl('promotionForm').hidden=r.revision==null;
  adminEl('promotionPrice').value=offer?.sale_price??r.price;adminEl('promotionPublished').checked=!!offer?.published;
