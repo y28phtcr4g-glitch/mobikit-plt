@@ -100,6 +100,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 
 
 #adminDetails{min-width:0}#adminDetails summary{cursor:pointer;padding:14px 0;font-weight:700}#adminDetails .card{margin-top:8px}#adminBannerForm{display:grid;gap:16px;min-width:0}#adminBannerForm>label{display:grid;gap:7px;min-width:0}#adminBannerForm input:not([type=checkbox]),#adminBannerForm textarea{width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#adminBannerForm textarea{resize:vertical}#adminBannerForm .admin-publish{display:flex;align-items:center;gap:10px}#adminBannerForm input[type=checkbox]{width:20px;height:20px;flex:0 0 auto}#adminStatus{overflow-wrap:anywhere}#adminReload{max-width:100%;white-space:normal}#adminPreview{display:block;background:#08080e;border-radius:12px}
+#catalogAdmin{margin-top:24px;min-width:0}#catalogAdmin form{display:grid;gap:14px;margin-top:24px}#catalogAdmin label{display:grid;gap:6px;margin-top:12px;min-width:0}#catalogAdmin input:not([type=checkbox]),#catalogAdmin select,#catalogAdmin textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#100c19;color:var(--text);font:inherit}#catalogSelect{min-height:180px}#catalogPreview{width:100%;max-height:280px;object-fit:contain}#catalogAdmin .admin-publish{display:flex;align-items:center}#catalogAdmin input[type=checkbox]{width:20px;height:20px}#catalogIdentity,#catalogStatus{overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -123,7 +124,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}.wrap{width:min(1
 <script>
 (function(){
 "use strict";
-const CLOUD_MODE=(()=>{try{return new URLSearchParams(location.search).get("cloud")==="1"||location.hash.includes("access_token=")||location.hash.includes("error_description=")||localStorage.getItem("mobikitCloudPreview")==="1"}catch(e){return false}})();
+const CLOUD_MODE=(()=>{try{return new URLSearchParams(location.search).get("cloud")!=="0"||location.hash.includes("access_token=")||location.hash.includes("error_description=")||localStorage.getItem("mobikitCloudPreview")==="1"}catch(e){return false}})();
 const SUPABASE_URL="https://iobkeqfpwelvsntxqurt.supabase.co",SUPABASE_KEY="sb_publishable_jMg1IOTqc9n4zCqE7Dp1VA_jYaPCMn5";
 let cloudClient=null,cloudReady=null,cloudAccount=null,cloudOrders=[],cloudFavorites=[],cloudWaiting=[],cloudAuthVersion=0,cloudPrefsBusy=false,cloudCancelBusy=false,cloudGuestRequests={};
 function notify(message){
@@ -300,7 +301,7 @@ function promoTime(v){if(!v)return null;const t=new Date(v).getTime();return Num
 function promoState(offer,now=Date.now()){if(!offer||offer.published!==true||!Number.isFinite(Number(offer.salePrice))||Number(offer.salePrice)<0)return "hidden";const start=promoTime(offer.startAt),end=promoTime(offer.endAt);if(start!==null&&end!==null&&end<=start)return "invalid";if(start!==null&&now<start)return "scheduled";if(end!==null&&now>=end)return "expired";return "active"}
 function activePromo(id){const p=PRODUCTS.find(x=>x.id===id),offer=PROMO_CONFIG.items.find(x=>x.id===id);return isCatalogVisible(p)&&promoState(offer)==="active"?offer:null}
 function promoDeadline(offer){const t=promoTime(offer.endAt);return t===null?"":new Date(t).toLocaleString("uk-UA",{dateStyle:"short",timeStyle:"short"})}
-function currentPrice(id){const p=PRODUCTS.find(x=>x.id===id);if(!p)return 0;const offer=activePromo(id);return offer?Number(offer.salePrice):p.price}
+function currentPrice(id,key){const p=PRODUCTS.find(x=>x.id===id);if(!p)return 0;const offer=activePromo(id);return offer?Number(offer.salePrice):(variantByKey(id,key)?.price??p.price)}
 
 function productCard(p){
  return '<article class="product"><button class="fav-btn '+(favorites.includes(p.id)?'active':'')+'" data-favorite="'+p.id+'" type="button" aria-label="Обране" title="Обране">'+(favorites.includes(p.id)?'♥':'♡')+'</button><div class="productpic" role="button" tabindex="0" aria-label="Відкрити '+esc(p.name)+'" data-open-product="'+p.id+'">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" loading="lazy" referrerpolicy="no-referrer" data-safe-img="1">':p.icon)+'</div><div class="productbody"><div class="eyebrow">'+esc(categoryNames[p.category])+'</div><h3 tabindex="0" data-open-product="'+p.id+'">'+esc(p.name)+'</h3><p class="muted">'+esc(p.desc)+'</p><div class="productmeta"><span class="price">'+money(currentPrice(p.id))+'</span><span class="demo-price">'+(currentPrice(p.id)!==p.price?"🔥 акція · ":"")+'демо-ціна для тесту</span></div><button data-add="'+p.id+'">Додати в кошик</button></div></article>';
@@ -310,7 +311,7 @@ function bindAdd(root=document){
  root.querySelectorAll("[data-open-product]").forEach(el=>{el.onclick=()=>openProduct(el.dataset.openProduct);el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openProduct(el.dataset.openProduct)}}});
  root.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const p=PRODUCTS.find(x=>x.id===b.dataset.add);if(!p)return;if(variantsFor(p.id).length){openProduct(p.id);return}if(addCartProduct(p.id)){b.textContent="✓ Додано";setTimeout(()=>b.textContent="Додати в кошик",800)}});
 }
-function openProduct(id){const p=PRODUCTS.find(x=>x.id===id);if(!isCatalogVisible(p))return;document.getElementById("productModalCategory").textContent=categoryNames[p.category];document.getElementById("productModalName").textContent=p.name;document.getElementById("productModalDesc").textContent=p.desc;document.getElementById("productModalPrice").textContent=money(currentPrice(p.id));document.getElementById("productModalPhoto").innerHTML=p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" referrerpolicy="no-referrer" data-safe-img="1">':p.icon;const add=document.getElementById("productModalAdd"),vb=document.getElementById("productModalVariants"),sb=document.getElementById("productModalStock"),vars=variantsFor(p.id);clearTimeout(productAddedTimer);add.textContent="Додати в кошик 🐾";add.dataset.id=p.id;if(vars.length){vb.innerHTML='<label>Варіант<select id="productVariantSelect">'+vars.map(v=>'<option value="'+esc(v.key)+'">'+esc(v.options)+'</option>').join("")+'</select></label>';const sel=vb.querySelector("select"),sync=()=>{const s=demoStockFor(p,sel.value);sb.textContent=s.label;add.disabled=!s.orderable;add.dataset.variantKey=sel.value;syncWaitButton(p,sel.value)};sel.onchange=sync;sync()}else{vb.innerHTML="";const s=demoStockFor(p,"");sb.textContent=s.label;add.disabled=!s.orderable;add.dataset.variantKey="";syncWaitButton(p,"")}const fb=document.getElementById("productModalFavorite");fb.dataset.id=p.id;fb.classList.toggle("active",favorites.includes(p.id));fb.textContent=favorites.includes(p.id)?"♥ В обраному":"♡ В обране";const m=document.getElementById("productModal");m.classList.add("open");m.setAttribute("aria-hidden","false");activateModal(m)}
+function openProduct(id){const p=PRODUCTS.find(x=>x.id===id);if(!isCatalogVisible(p))return;document.getElementById("productModalCategory").textContent=categoryNames[p.category];document.getElementById("productModalName").textContent=p.name;document.getElementById("productModalDesc").textContent=p.desc;document.getElementById("productModalPrice").textContent=money(currentPrice(p.id));document.getElementById("productModalPhoto").innerHTML=p.photo?'<img src="'+esc(p.photo)+'" alt="'+esc(p.name)+'" referrerpolicy="no-referrer" data-safe-img="1">':p.icon;const add=document.getElementById("productModalAdd"),vb=document.getElementById("productModalVariants"),sb=document.getElementById("productModalStock"),vars=variantsFor(p.id);clearTimeout(productAddedTimer);add.textContent="Додати в кошик 🐾";add.dataset.id=p.id;if(vars.length){vb.innerHTML='<label>Варіант<select id="productVariantSelect">'+vars.map(v=>'<option value="'+esc(v.key)+'">'+esc(v.options)+'</option>').join("")+'</select></label>';const sel=vb.querySelector("select"),sync=()=>{const s=demoStockFor(p,sel.value);sb.textContent=s.label;add.disabled=!s.orderable;add.dataset.variantKey=sel.value;const selected=variantByKey(p.id,sel.value);document.getElementById('productModalPrice').textContent=money(currentPrice(p.id,sel.value));document.getElementById('productModalDesc').textContent=selected?.desc??p.desc;document.getElementById('productModalPhoto').innerHTML=(selected?.photo||p.photo)?'<img src="'+esc(selected?.photo||p.photo)+'" alt="'+esc(p.name)+'" referrerpolicy="no-referrer" data-safe-img="1">':p.icon;syncWaitButton(p,sel.value)};sel.onchange=sync;sync()}else{vb.innerHTML="";const s=demoStockFor(p,"");sb.textContent=s.label;add.disabled=!s.orderable;add.dataset.variantKey="";syncWaitButton(p,"")}const fb=document.getElementById("productModalFavorite");fb.dataset.id=p.id;fb.classList.toggle("active",favorites.includes(p.id));fb.textContent=favorites.includes(p.id)?"♥ В обраному":"♡ В обране";const m=document.getElementById("productModal");m.classList.add("open");m.setAttribute("aria-hidden","false");activateModal(m)}
 let productAddedTimer;
 function activateModal(m){
  m._returnFocus=document.activeElement;m._previousOverflow=document.body.style.overflow;m._inertSiblings=[];
@@ -366,7 +367,7 @@ function renderCart(){
  const box=document.getElementById("cartItems");
  if(!cart.length){box.innerHTML='<p class="muted">Кошик порожній.</p>';return}
  let total=0,blocked=false;
- box.innerHTML=cart.map(item=>{const p=PRODUCTS.find(x=>x.id===item.id);if(!isCatalogVisible(p)){blocked=true;return "";}const v=variantByKey(p.id,item.variantKey),s=demoStockFor(p,item.variantKey);if(!s.orderable||item.qty>s.stock-1)blocked=true;total+=currentPrice(p.id)*item.qty;return '<div class="cartrow"><div><strong>'+esc(p.name)+'</strong>'+(v?'<div class="muted">'+esc(v.options)+'</div>':'')+'<div class="muted">'+money(currentPrice(p.id))+' × '+item.qty+' · '+esc(s.label)+'</div></div><div><button class="btn alt" data-minus="'+esc(lineKey(p.id,item.variantKey))+'">−</button> <span class="badge">'+item.qty+'</span> <button class="btn alt" data-plus="'+esc(lineKey(p.id,item.variantKey))+'">+</button> <button class="btn alt" data-remove="'+esc(lineKey(p.id,item.variantKey))+'">Видалити</button></div></div>'}).join("")+'<div class="cartrow"><strong>Разом</strong><strong class="price">'+money(total)+'</strong></div>'+(blocked?'<p class="muted">⚠️ У кошику є варіант, який уже не можна замовити онлайн. Зменш кількість або видали його.</p>':'')+'<p class="demo-price">Ціни й залишки в цьому демо тестові.</p>';
+ box.innerHTML=cart.map(item=>{const p=PRODUCTS.find(x=>x.id===item.id);if(!isCatalogVisible(p)){blocked=true;return '<div class="cartrow"><span>Товар більше не доступний</span><button class="btn alt" data-remove="'+esc(lineKey(item.id,item.variantKey))+'">Видалити</button></div>';}const v=variantByKey(p.id,item.variantKey),s=demoStockFor(p,item.variantKey);if(!s.orderable||item.qty>s.stock-1)blocked=true;total+=currentPrice(p.id,item.variantKey)*item.qty;return '<div class="cartrow"><div><strong>'+esc(p.name)+'</strong>'+(v?'<div class="muted">'+esc(v.options)+'</div>':'')+'<div class="muted">'+money(currentPrice(p.id,item.variantKey))+' × '+item.qty+' · '+esc(s.label)+'</div></div><div><button class="btn alt" data-minus="'+esc(lineKey(p.id,item.variantKey))+'">−</button> <span class="badge">'+item.qty+'</span> <button class="btn alt" data-plus="'+esc(lineKey(p.id,item.variantKey))+'">+</button> <button class="btn alt" data-remove="'+esc(lineKey(p.id,item.variantKey))+'">Видалити</button></div></div>'}).join("")+'<div class="cartrow"><strong>Разом</strong><strong class="price">'+money(total)+'</strong></div>'+(blocked?'<p class="muted">⚠️ У кошику є варіант, який уже не можна замовити онлайн. Зменш кількість або видали його.</p>':'')+'<p class="demo-price">Ціни й залишки в цьому демо тестові.</p>';
  const findLine=k=>cart.find(x=>lineKey(x.id,x.variantKey)===k);
  box.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const i=findLine(b.dataset.plus);if(i)addCartProduct(i.id,i.variantKey)});
  box.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>{const i=findLine(b.dataset.minus);if(!i)return;const prev=cart.map(x=>({...x}));i.qty--;if(i.qty<=0)cart=cart.filter(x=>x!==i);if(!saveCart()){cart=prev;return}renderCart()});
@@ -511,11 +512,7 @@ async function cloudLoadOrders(){
  if((cloudAccount?.profileId||"guest")!==owner)return;
  cloudOrders=Array.isArray(orders)?orders.slice(0,100):[];renderOrders();
 }
-async function cloudLoadCatalog(){
- const rows=await cloudRpc("mk_catalog");if(!Array.isArray(rows))throw new Error("Не вдалося прочитати каталог");
- for(const row of rows){const v=variantByKey(row.product_id,row.variant_key);if(v)v.stock=Number(row.available);else if(!row.variant_key)DEMO_PRODUCT_STOCK[row.product_id]=Number(row.available)}
- renderCart();renderCategory();renderPromos();renderWaiting();
-}
+async function cloudLoadCatalog(){await refreshStorefront()}
 function cloudProfile(row,user){return {profileId:user.id,name:String(row.name||"").slice(0,120),phone:String(row.phone||"").slice(0,32),email:String(user.email||"").slice(0,254),birthday:String(row.birthday||"").slice(0,10),avatarCat:String(row.avatar_cat||"").slice(0,8),avatarImage:safeImageUrl(row.avatar_image)}}
 async function cloudRestore(session){
  adminReset();const version=++cloudAuthVersion;cloudAccount=null;cloudOrders=[];cloudFavorites=[];cloudWaiting=[];renderAccount();
@@ -594,12 +591,14 @@ adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування м�
 <button class="btn" type="submit">Зберегти банер</button></form></div></details>`;
 document.getElementById('account').append(adminPanel);
 const adminEl=id=>document.getElementById(id);
-function adminReset(){adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
+function adminReset(){if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
 function adminDenied(e){return e?.code==='42501'||['401','403'].includes(String(e?.statusCode||e?.status||''))}
 function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':adminDenied(e)?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
 function adminImageUrl(value){try{if(/[\s\\<>"]/u.test(value))return '';const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
 function adminPreview(){const url=adminImageUrl(adminEl('adminImage').value);adminEl('adminPreview').hidden=!url;if(url)adminEl('adminPreview').src=url;else adminEl('adminPreview').removeAttribute('src')}
 async function adminLoad(){
+ if(typeof catalogBusy!=='undefined'&&catalogBusy)return;
+ if(typeof catalogReset==='function')catalogReset();
  const epoch=++adminEpoch;adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true;
  if(!CLOUD_MODE||!cloudClient||!cloudAccount){adminEl('adminStatus').textContent='Потрібен підтверджений вхід через Supabase (?cloud=1).';return}
  adminEl('adminStatus').textContent='Перевіряємо доступ…';
@@ -612,6 +611,7 @@ async function adminLoad(){
   adminRevision=row.revision;adminEl('adminTitle').value=row.title;adminEl('adminSubtitle').value=row.subtitle;
   adminEl('adminImage').value=row.image_url;adminEl('adminPublished').checked=row.published;adminEl('adminFile').value='';adminPreview();
   adminEl('adminBannerForm').hidden=false;adminEl('adminStatus').textContent='Доступ: '+(role==='owner'?'Owner':'Адміністратор')+'. '+(row.published?'Банер опубліковано.':'Банер приховано.');
+  if(typeof catalogAdminLoad==='function')await catalogAdminLoad();
  }catch(e){if(epoch===adminEpoch){adminRole=null;adminRevision=null;adminEl('adminStatus').textContent=adminMessage(e)}}
 }
 async function cloudLoadBanner(client=cloudClient){
@@ -651,6 +651,129 @@ adminEl('adminBannerForm').onsubmit=async e=>{
  finally{if(epoch===adminEpoch){adminBusy=false;controls.forEach(x=>x.disabled=false)}}
 };
 
+// Catalog editor and storefront share the server's canonical variant records.
+let catalogRows=[],catalogOffers=[],catalogSelected=null,catalogBusy=false,catalogEpoch=0,storefrontEpoch=0;
+function applyStorefront(data){
+ if(!data||!Array.isArray(data.items)||!Array.isArray(data.promotions))throw new Error('Некоректний каталог сервера');
+ const grouped=new Map();
+ for(const row of data.items){
+  if(!row.published||!categoryNames[row.category])continue;
+  if(!grouped.has(row.product_id))grouped.set(row.product_id,[]);
+  grouped.get(row.product_id).push(row);
+ }
+ const old=new Map(PRODUCTS.map(p=>[p.id,p]));const next=[];
+ for(const [id,rows] of grouped){
+  const base=rows.find(r=>r.variant_key==='')||rows[0],prev=old.get(id)||{};
+  next.push({...prev,id,category:base.category,name:base.name,desc:base.description||'',price:Number(base.price),photo:adminImageUrl(base.photo),warranty:base.warranty||'',published:true,status:'active',icon:prev.icon||'📦',popularity:prev.popularity||0,createdAt:prev.createdAt||new Date().toISOString()});
+  DEMO_VARIANTS[id]=rows.length===1&&!base.variant_key?[]:rows.map(r=>({key:r.variant_key,options:r.variant||'Основний',stock:Number(r.available),price:Number(r.price),photo:adminImageUrl(r.photo),name:r.name,desc:r.description||''}));
+  DEMO_PRODUCT_STOCK[id]=Number(base.available);
+ }
+ for(const id of Object.keys(DEMO_VARIANTS))if(!grouped.has(id))delete DEMO_VARIANTS[id];
+ PRODUCTS.splice(0,PRODUCTS.length,...next);PROMO_CONFIG.items=data.promotions;
+}
+async function refreshStorefront(client=cloudClient){
+ const epoch=++storefrontEpoch;const result=await client.rpc('mk_storefront');
+ if(result.error)throw result.error;if(epoch!==storefrontEpoch)return;
+ const modal=adminEl('productModal'),opened=modal.classList.contains('open')?adminEl('productModalAdd').dataset.id:null,selected=adminEl('productVariantSelect')?.value;applyStorefront(result.data);renderCart();renderCategory();renderPromos();renderWaiting();renderFavorites();if(opened){if(PRODUCTS.some(p=>p.id===opened)){openProduct(opened);const select=adminEl('productVariantSelect');if(select&&variantByKey(opened,selected)){select.value=selected;select.onchange()}}else closeProduct()}
+}
+function catalogAdminInit(){
+ const section=document.createElement('div');section.id='catalogAdmin';section.hidden=true;section.className='card';
+ section.innerHTML=`<h2>Товари та акції</h2><p class="muted">Каталог і замовлення поки працюють у деморежимі. Залишок — фізична кількість; резерви та остання одиниця захищені сервером.</p>
+ <p id="catalogStatus" role="status" aria-live="polite"></p>
+ <div class="buttons"><button class="btn" type="button" id="catalogNew">Додати товар</button><button class="btn alt" type="button" id="catalogRefresh">Оновити список</button></div>
+ <label>Пошук товару<input id="catalogSearch" type="search" placeholder="Назва або код"></label>
+ <label>Товар / варіант<select id="catalogSelect" size="6" aria-label="Товар або варіант"></select></label>
+ <form id="catalogForm" hidden>
+ <p id="catalogIdentity" class="muted"></p>
+ <label>Назва товару<input id="catalogName" maxlength="200" required></label>
+ <label>Категорія<select id="catalogCategory" required></select></label>
+ <label>Опис товару<textarea id="catalogDescription" rows="5" maxlength="4000"></textarea></label>
+ <label>Варіант (колір, розмір, довжина)<input id="catalogVariant" maxlength="200"></label>
+ <label>Ціна, грн<input id="catalogPrice" type="number" min="0" max="9999999999.99" step="0.01" required></label>
+ <label>Фізичний залишок, шт.<input id="catalogStock" type="number" min="0" max="1000000" step="1" required></label>
+ <p id="catalogReserved" class="muted"></p>
+ <label>Гарантія<input id="catalogWarranty" maxlength="500"></label>
+ <label>Фото — HTTPS адреса<input id="catalogPhoto" type="url" maxlength="2000"></label>
+ <label>Завантажити фото (JPEG, PNG, WebP; до 5 МБ)<input id="catalogFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
+ <p class="muted">Фото товарів публічні, зокрема для чернеток.</p>
+ <img id="catalogPreview" alt="Фото товару" hidden>
+ <label class="admin-publish"><input id="catalogPublished" type="checkbox"> Показувати цей варіант у каталозі</label>
+ <div class="buttons"><button class="btn" type="submit">Зберегти товар</button><button class="btn alt" id="catalogAddVariant" type="button">Додати варіант цього товару</button></div>
+ </form>
+ <form id="promotionForm" hidden><h3>Акція для цього товару</h3><p class="muted">Акційна ціна діє на всі варіанти товару та перевіряється сервером при замовленні.</p>
+ <label>Акційна ціна, грн<input id="promotionPrice" type="number" min="0" max="9999999999.99" step="0.01" required></label>
+ <label>Початок (твій місцевий час)<input id="promotionStart" type="datetime-local"></label>
+ <label>Закінчення (твій місцевий час)<input id="promotionEnd" type="datetime-local"></label>
+ <label class="admin-publish"><input id="promotionPublished" type="checkbox"> Увімкнути акцію</label>
+ <button class="btn" type="submit">Зберегти акцію</button></form>`;
+ adminEl('adminDetails').append(section);
+ adminEl('catalogCategory').innerHTML=Object.entries(categoryNames).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
+ adminEl('catalogNew').onclick=()=>catalogEdit(null);
+ adminEl('catalogRefresh').onclick=()=>catalogAdminLoad();
+ adminEl('catalogSearch').oninput=catalogRenderList;
+ adminEl('catalogSelect').onchange=()=>{const index=Number(adminEl('catalogSelect').value);if(Number.isInteger(index)&&catalogRows[index])catalogEdit(catalogRows[index])};
+ adminEl('catalogAddVariant').onclick=()=>{if(catalogSelected?.revision!=null)catalogEdit({...catalogSelected,variant_key:'v-'+crypto.randomUUID(),variant:'',stock:0,published:false,revision:null})};
+ adminEl('catalogPhoto').oninput=catalogPreview;
+ adminEl('catalogForm').onsubmit=catalogSave;
+ adminEl('promotionForm').onsubmit=promotionSave;
+}
+function catalogReset(){catalogEpoch++;catalogRows=[];catalogOffers=[];catalogSelected=null;catalogBusy=false;const el=adminEl('catalogAdmin');if(!el)return;el.hidden=true;adminEl('catalogForm').reset();adminEl('promotionForm').reset();adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogSelect').innerHTML='';adminEl('catalogPreview').hidden=true;adminEl('catalogPreview').removeAttribute('src');catalogControls(false)}
+function catalogControls(busy){for(const id of ['catalogForm','promotionForm'])for(const control of adminEl(id).elements)control.disabled=busy;for(const id of ['catalogNew','catalogRefresh','catalogSelect','catalogSearch'])adminEl(id).disabled=busy}
+function catalogError(e){return e?.code==='40001'?'Дані вже змінилися. Скопіюй незбережений текст або адресу фото й натисни «Оновити список», потім вибери товар повторно.':adminDenied(e)?'Доступ відсутній або відкликаний.':e?.code==='22023'?'Перевір поля. Залишок має покривати резерви та останню одиницю магазину.':'Не вдалося зберегти. Перевір з’єднання та повтори.'}
+async function catalogAdminLoad(){
+ if(catalogBusy)return;const epoch=++catalogEpoch;catalogSelected=null;adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogAdmin').hidden=true;
+ if(!['owner','administrator'].includes(adminRole)||!cloudAccount)return;
+ adminEl('catalogAdmin').hidden=false;adminEl('catalogStatus').textContent='Завантажуємо каталог…';
+ try{const [rows,offers]=await Promise.all([cloudRpc('mk_admin_catalog_list'),cloudRpc('mk_admin_promotions')]);if(epoch!==catalogEpoch)return;if(!Array.isArray(rows)||!Array.isArray(offers))throw new Error('Invalid response');catalogRows=rows;catalogOffers=offers;catalogRenderList();adminEl('catalogStatus').textContent='Доступно варіантів: '+rows.length+'. Вибери товар або додай новий.'}
+ catch(e){if(epoch===catalogEpoch){adminEl('catalogStatus').textContent=catalogError(e);if(adminDenied(e))catalogReset()}}
+}
+function catalogRenderList(){const query=adminEl('catalogSearch').value.toLocaleLowerCase();adminEl('catalogSelect').innerHTML=catalogRows.map((r,i)=>({r,i})).filter(({r})=>(r.name+' '+r.product_id+' '+r.variant).toLocaleLowerCase().includes(query)).map(({r,i})=>'<option value="'+i+'">'+esc(r.name+(r.variant?' · '+r.variant:'')+' — '+r.price+' грн · '+r.stock+' шт. · '+(r.published?'Опубліковано':'Чернетка'))+'</option>').join('')}
+function catalogEdit(row){
+ if(catalogBusy)return;catalogSelected=row?{...row}:{product_id:'product-'+crypto.randomUUID(),variant_key:'',revision:null,category:'gadgets',name:'',description:'',variant:'',price:0,stock:0,warranty:'',photo:'',published:false};
+ const r=catalogSelected;adminEl('catalogForm').reset();
+ for(const [field,key] of Object.entries({Name:'name',Category:'category',Description:'description',Variant:'variant',Price:'price',Stock:'stock',Warranty:'warranty',Photo:'photo'}))adminEl('catalog'+field).value=r[key]??'';
+ adminEl('catalogPublished').checked=!!r.published;adminEl('catalogPublished').disabled=r.revision==null;
+ adminEl('catalogIdentity').textContent=r.revision==null?'Новий товар / варіант: спочатку збережи чернетку.':'Код: '+r.product_id+(r.variant_key?' / '+r.variant_key:'');
+ adminEl('catalogReserved').textContent='Зарезервовано: '+(r.reserved||0)+'. Доступно онлайн: '+(r.orderable||0)+'.';
+ adminEl('catalogForm').hidden=false;adminEl('catalogAddVariant').hidden=r.revision==null;catalogPreview();
+ const offer=catalogOffers.find(p=>p.product_id===r.product_id);adminEl('promotionForm').reset();adminEl('promotionForm').hidden=r.revision==null;
+ adminEl('promotionPrice').value=offer?.sale_price??r.price;adminEl('promotionPublished').checked=!!offer?.published;
+ const local=value=>value?new Date(new Date(value).getTime()-new Date(value).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
+ adminEl('promotionStart').value=local(offer?.start_at);adminEl('promotionEnd').value=local(offer?.end_at);
+}
+function catalogPreview(){const image=adminImageUrl(adminEl('catalogPhoto').value);adminEl('catalogPreview').hidden=!image;if(image)adminEl('catalogPreview').src=image;else adminEl('catalogPreview').removeAttribute('src')}
+async function catalogSave(e){
+ e.preventDefault();if(catalogBusy||!catalogSelected||!['owner','administrator'].includes(adminRole))return;
+ const r={...catalogSelected},epoch=catalogEpoch,user=cloudAccount?.profileId;
+ const item={product_id:r.product_id,variant_key:r.variant_key,name:adminEl('catalogName').value.trim(),category:adminEl('catalogCategory').value,description:adminEl('catalogDescription').value,variant:adminEl('catalogVariant').value,warranty:adminEl('catalogWarranty').value,photo:adminEl('catalogPhoto').value.trim(),price:Number(adminEl('catalogPrice').value),stock:Number(adminEl('catalogStock').value),published:r.revision==null?false:adminEl('catalogPublished').checked};
+ const file=adminEl('catalogFile').files[0],types={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+ if(!item.name||!Number.isFinite(item.price)||item.price<0||Math.round(item.price*100)/100!==item.price||!Number.isInteger(item.stock)||item.stock<0||(item.photo&&!adminImageUrl(item.photo))||file&&(!types[file.type]||!file.size||file.size>5242880)){adminEl('catalogStatus').textContent='Перевір назву, ціну, залишок і фото (JPEG/PNG/WebP до 5 МБ).';return}
+ catalogBusy=true;catalogControls(true);adminEl('catalogStatus').textContent='Зберігаємо товар…';
+ try{
+  if(file){const path='weekly/'+user+'/'+crypto.randomUUID()+'.'+types[file.type];const upload=await cloudClient.storage.from('mk-banners').upload(path,file,{upsert:false,contentType:file.type});if(upload.error)throw upload.error;item.photo=cloudClient.storage.from('mk-banners').getPublicUrl(path).data.publicUrl}
+  if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;
+  if(file){adminEl('catalogPhoto').value=item.photo;adminEl('catalogFile').value='';catalogPreview()}
+  const saved=await cloudRpc('mk_admin_product_save',{p_item:item,p_revision:r.revision});if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;
+  const i=catalogRows.findIndex(x=>x.product_id===saved.product_id&&x.variant_key===saved.variant_key);if(i<0)catalogRows.push(saved);else catalogRows[i]=saved;
+  catalogBusy=false;catalogControls(false);catalogRenderList();catalogEdit(saved);adminEl('catalogStatus').textContent=saved.published?'Товар збережено й опубліковано.':'Чернетку збережено. Увімкни «Показувати», щоб опублікувати.';
+  try{await refreshStorefront()}catch{adminEl('catalogStatus').textContent+=' Вітрину не вдалося оновити. Перезавантаж сторінку.'}
+ }catch(err){if(epoch===catalogEpoch){adminEl('catalogStatus').textContent=catalogError(err);if(adminDenied(err)){catalogReset();adminReset()}}}
+ finally{if(epoch===catalogEpoch){catalogBusy=false;catalogControls(false);adminEl('catalogPublished').disabled=catalogSelected?.revision==null}}
+}
+async function promotionSave(e){
+ e.preventDefault();if(catalogBusy||catalogSelected?.revision==null||!['owner','administrator'].includes(adminRole))return;
+ const epoch=catalogEpoch,user=cloudAccount?.profileId,id=catalogSelected.product_id,old=catalogOffers.find(p=>p.product_id===id),time=key=>adminEl(key).value?new Date(adminEl(key).value).toISOString():null;
+ const item={product_id:id,sale_price:Number(adminEl('promotionPrice').value),published:adminEl('promotionPublished').checked,start_at:time('promotionStart'),end_at:time('promotionEnd')};
+ if(!Number.isFinite(item.sale_price)||item.sale_price<0||Math.round(item.sale_price*100)/100!==item.sale_price||item.start_at&&item.end_at&&item.end_at<=item.start_at){adminEl('catalogStatus').textContent='Перевір акційну ціну та термін.';return}
+ catalogBusy=true;catalogControls(true);
+ try{const saved=await cloudRpc('mk_admin_promotion_save',{p_item:item,p_revision:old?.revision??null});if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;catalogOffers=catalogOffers.filter(p=>p.product_id!==id).concat(saved);adminEl('catalogStatus').textContent='Акцію збережено.';await refreshStorefront()}
+ catch(err){if(epoch===catalogEpoch){adminEl('catalogStatus').textContent=catalogError(err);if(adminDenied(err)){catalogReset();adminReset()}}}
+ finally{if(epoch===catalogEpoch){catalogBusy=false;catalogControls(false)}}
+}
+
+catalogAdminInit();
+PRODUCTS.forEach(p=>p.published=false);
+
 if(CLOUD_MODE){
  document.querySelector(".demo-auth-note").textContent="Тест підключення Supabase. Вхід підтверджується листом; наразі доступний email власника проєкту. Товари й замовлення — демо.";
  document.getElementById("authLogin").placeholder="Email";document.getElementById("authLogin").type="email";
@@ -678,8 +801,9 @@ if(CLOUD_MODE){
 
 
 if(!CLOUD_MODE){
- import("https://esm.sh/@supabase/supabase-js@2.117.2").then(({createClient})=>cloudLoadBanner(createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}}))).catch(()=>{adminEl("promoBanner").hidden=true});
+ import("https://esm.sh/@supabase/supabase-js@2.117.2").then(async({createClient})=>{const publicClient=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});await Promise.all([cloudLoadBanner(publicClient),refreshStorefront(publicClient)]);}).catch(()=>{adminEl("promoBanner").hidden=true});
 }
+setInterval(()=>{if(cloudClient&&!document.hidden&&!catalogBusy)refreshStorefront().catch(()=>{})},60000);
 window.addEventListener("storage",e=>{
  if(e.storageArea!==localStorage)return;
  if(e.key==="mobikitCart"||e.key===null){

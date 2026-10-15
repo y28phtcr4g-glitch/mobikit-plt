@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync('index.html','utf8');
 const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 new vm.Script(script); // Check the entire store, not only the extracted editor.
-const source=script.slice(script.indexOf('let adminEpoch='),script.indexOf('if(CLOUD_MODE){',script.indexOf('let adminEpoch=')));
+const source=script.slice(script.indexOf('let adminEpoch='),script.indexOf('// Catalog editor and storefront',script.indexOf('let adminEpoch=')));
 function harness(rpc,storage){
  const elements=new Map();const el=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,textContent:'',files:[],elements:[],reset(){},append(){},removeAttribute(){}});return elements.get(id)};
  const ctx=vm.createContext({document:{createElement:()=>({}),getElementById:el},URL,crypto:require('node:crypto').webcrypto,CLOUD_MODE:true,cloudClient:{storage,rpc:async name=>({data:await rpc(name)})},cloudAccount:{profileId:'verified-user'},cloudRpc:rpc,PROMO_CONFIG:{},renderPromos(){}});

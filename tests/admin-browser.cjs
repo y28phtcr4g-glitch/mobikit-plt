@@ -21,7 +21,7 @@ async function openEditor(browser,state,width=390){
    return route.fulfill({contentType:'application/json',body:JSON.stringify(['owner','administrator'].includes(state.role)?{}:{error:{statusCode:'403'}})});
   }
   if(url==='https://mobikit.test/qa-rpc'){
-   const {name,args}=JSON.parse(route.request().postData());let result={data:[]};
+   const {name,args}=JSON.parse(route.request().postData());let result={data:[]};if(name==='mk_storefront')result={data:{items:[],promotions:[]}};
    if(name==='mk_admin_role')result={data:state.role};
    if(name==='mk_weekly_banner')result={data:state.banner.published?[state.banner]:[]};
    if(name==='mk_admin_banner_get'||name==='mk_admin_banner_save'){
