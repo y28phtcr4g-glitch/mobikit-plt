@@ -54,3 +54,100 @@ Optional browser smoke check: `node tests/admin-browser.cjs` with Playwright ava
 - Призначення Owner — лише після особистої перевірки UUID, підтвердженої пошти й дозволу власника за процедурою вище. Ці зміни не призначають ролі і не застосовують production міграції.
 
 Редактор зберігає незбережений текст при згортанні й повторному відкритті. Кнопка «Перевірити доступ / оновити» навмисно перечитує дані й відкидає місцеві зміни. Вихід або зміна сесії очищає форму та блокування; відповідь старого завантаження не зберігає банер і не розблоковує нове збереження. Storage 401/403 закриває редактор до повторної перевірки доступу. Успішне завантаження, завершене після виходу, може залишити невикористаний публічний файл: перевірити посилання перед ручним видаленням у Storage.
+
+## Admin catalog RPC — first increment
+
+Branch base: `codex/secure-admin-banners` at
+`0728aef599a1a02ad738169d318604e53515660e`.
+
+This increment provides a tested database API; the catalog form and dynamic storefront
+integration are still pending. The existing browser catalog is static: it currently
+refreshes availability only, does not import new products/variants or updated prices,
+and does not remove hidden products. Do not present catalog editing as a finished
+shop UI. Checkout always enforces current database publication, price and stock.
+
+Apply missing migrations in filename order, ending with
+`202610140003_admin_catalog.sql`, after review, first in a disposable Supabase project.
+No production migration was applied, no Owner was assigned, and no live inventory was
+created. Development/tests do not require the owner's Gmail or an owner account.
+Real browser use of these RPCs will require an already authorized owner/administrator
+session; this change deliberately adds no bootstrap or membership-management route.
+Do not grant roles just to test this feature against production.
+
+- `mk_admin_catalog_list()` returns all variants (including drafts), revisions,
+  physical `stock`, active `reserved`, `available = max(0, stock - reserved)`,
+  and `orderable = max(0, available - 1)` for published demo rows; otherwise zero.
+- `mk_admin_catalog_save(p_item jsonb, p_revision bigint)` replaces one variant's
+  editable fields and returns the saved row. Send every field shown below.
+  Existing rows require their loaded revision. A NULL revision creates a new
+  **draft**; publish it in a separate save using the returned revision. Conflicts,
+  including duplicate creates, return SQLSTATE `40001`; reload before retrying.
+- Both RPCs check `auth.uid()` against database membership on every call.
+  Owner and administrator are allowed; seller/customer/anonymous/revoked roles
+  are denied (`42501`). Metadata and browser roles cannot grant access.
+  Direct catalog-table access is revoked, including PUBLIC grants.
+- Products use the existing composite key `(product_id, variant_key)`.
+  Identifiers are immutable; an empty variant key represents an unvaried item.
+  Product descriptions remain per variant, matching the existing schema.
+  No hard delete or rename is exposed; unpublish to retire a variant without
+  breaking order-line references.
+- The same advisory transaction lock as checkout/cancellation protects saves.
+  Active reservations require physical stock >= reserved + one display unit.
+  With no active reservations, zero stock is valid. Expired pickups are released
+  before validation. Prices must be nonnegative, within numeric(12,2), with at
+  most two decimal places; stock is an integer from 0 to 1,000,000.
+- This is still the isolated **demo catalog**. New rows remain `is_demo=true`;
+  existing non-demo rows are read-only. No real stock values are inferred.
+  Existing promotion prices still override base prices at checkout when active;
+  promotion editing is outside this increment. Existing order snapshots and
+  idempotent order receipts retain their original prices after edits.
+- Revisions cover these RPC writes. Trusted manual SQL maintenance must advance
+  `revision` too (and follow the order transaction lock for stock changes).
+  Direct-table browser clients must not receive grants.
+
+Example payload shape (illustrative only; do not insert as live inventory):
+
+```json
+{
+  "product_id": "example-draft",
+  "variant_key": "",
+  "name": "Example draft",
+  "variant": "",
+  "photo": "",
+  "warranty": "",
+  "price": 0,
+  "stock": 0,
+  "published": false
+}
+```
+
+Validation uses `22023`; malformed types, missing/unknown fields, unsafe photo
+schemes, credentials in URLs, fractional stock and silent price rounding are rejected.
+Photo URLs may be empty or HTTPS; this increment does not fetch/upload images.
+
+Verification: `node --test tests/admin-ui.test.cjs` and
+`node tests/sql-embedded.cjs` (PGlite 0.5.9 as documented above).
+The runner now discovers **9 migrations and 5 SQL suites**, including
+`supabase/tests/admin_catalog.sql`. Fixtures, memberships and orders in that suite
+are transaction-local and roll back. It exercises real PostgreSQL permissions,
+both editing roles, denied roles/metadata spoofing/revocation, draft creation,
+publication, stale revisions, malformed input, variant isolation, reservations,
+last-unit boundaries, cancellation/expiry, immutable order receipts and non-demo
+write denial. It does not test simultaneous independent database connections,
+PostgREST/JWT HTTP behavior or the future editor. Before deployment, run all SQL
+suites in a disposable real Supabase project and verify RPC calls with real JWTs,
+revocation and concurrent checkout/editor sessions. Production stays untouched.
+
+## Catalog editor — 2026-10-15
+
+The account now includes **Товари та акції** for Owner/administrator: create a draft product, add variants, edit name/category/description/warranty/price/physical stock, set an HTTPS photo or upload JPEG/PNG/WebP up to 5 MiB, and publish/hide individual variants. Promotion dates and product-wide sale prices are editable with optimistic revisions. Seller/customer cannot use these RPCs. Membership management remains trusted SQL only.
+
+Apply the missing migrations once in order, ending with `202610150001_catalog_editor.sql`. It adds category/description and promotion revisions, guarded product/promotion RPCs, and `mk_storefront`. Existing category/description metadata is copied from the existing storefront; no stock or price is invented or changed. Existing demo inventory and demo checkout restrictions remain. The previous first-increment notes above describe the historical API-only state.
+
+The storefront now replaces its product/variant list from Supabase, including new products, edited prices, descriptions/photos and hidden variants. Published promotions use the same server records as checkout. Supabase account mode is the default (`?cloud=0` is optional local demo mode). A failed refresh retains the last successful view; initial static items remain hidden until the first successful response. Saving refreshes immediately in the current page; other cloud pages refresh every minute or on reload.
+
+Product photos reuse the existing public `mk-banners` marketing-image bucket and its authorized unique `weekly/<user UUID>/<random UUID>` paths. No overwrites/deletions/list grants or new public buckets are introduced. Uploaded draft images are public. Failed saves retain the completed upload URL for retry; orphan images require deliberate reference checks before manual cleanup.
+
+Descriptions and metadata are per variant. The primary empty-key variant, or first published variant, supplies the product card metadata. Promotion price applies to all variants. Creating a new product/variant is draft-only; publish in a separate save. Hiding retires an item without deleting order references. Real order fulfillment/admin roles and a production-inventory cutover are separate work; this increment does not invent these workflows.
+
+Validation: `node --test tests/admin-ui.test.cjs`, `node tests/catalog-browser.cjs`, `node tests/admin-browser.cjs`, and `node tests/sql-embedded.cjs`. Browser checks mock HTTP/Auth/Storage; catalog checks cover draft/publish, category/description/photo, promotion, additional variant, escaped titles, mobile width, stale revisions and role revocation. SQL checks exercise permissions, metadata, publication, promotion validation and conflicts in rollback fixtures. Live acceptance should use the already verified owner session and disposable draft data; do not publish dummy inventory.
