@@ -542,7 +542,7 @@ async function cloudSendLink(e){
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){fieldError("authLogin","Для підтвердженого входу введи email.");return}
  if(accountMode==="register"&&!validFullName(name)){fieldError("authName","Вкажи ім’я та прізвище.");return}
  const button=document.getElementById("authSubmit");if(button.disabled)return;button.disabled=true;
- try{await cloudReady;localStorage.setItem("mobikitCloudPreview","1");const r=await cloudClient.auth.signInWithOtp({email,options:{shouldCreateUser:accountMode==="register",emailRedirectTo:"https://y28phtcr4g-glitch.github.io/mobikit-plt/?cloud=1&qa=cloud",data:{name:accountMode==="register"?name:undefined}}});if(r.error)throw r.error;notify("Перевір пошту: ми надіслали посилання для входу. Відкрий його в цьому браузері.")}catch(e){cloudError(e)}finally{button.disabled=false}
+ try{await cloudReady;localStorage.setItem("mobikitCloudPreview","1");const r=await cloudClient.auth.signInWithOtp({email,options:{shouldCreateUser:accountMode==="register",emailRedirectTo:"https://mobikit-plt.com.ua/",data:{name:accountMode==="register"?name:undefined}}});if(r.error)throw r.error;notify("Перевір пошту: ми надіслали посилання для входу. Відкрий його в цьому браузері.")}catch(e){cloudError(e)}finally{button.disabled=false}
 }
 async function cloudCreateOrder(submit,unlock,type,buyerPhone,buyerName){
  try{
