@@ -580,6 +580,7 @@ var adminRole=null;
 let adminEpoch=0,adminRevision=null,adminBusy=false,bannerEpoch=0;
 const adminPanel=document.createElement('section');
 adminPanel.className='section';
+adminPanel.hidden=true;
 adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування магазином</summary>
 <div class="card"><p id="adminStatus" role="status" aria-live="polite">Увійди через Supabase для перевірки доступу.</p>
 <button type="button" class="btn alt" id="adminReload">Перевірити доступ / оновити</button>
@@ -595,7 +596,7 @@ adminPanel.innerHTML=`<details id="adminDetails"><summary>Керування м�
 <button class="btn" type="submit">Зберегти банер</button></form></div></details>`;
 document.getElementById('account').append(adminPanel);
 const adminEl=id=>document.getElementById(id);
-function adminReset(){if(typeof orderAdminReset==='function')orderAdminReset();adminRole=null;if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
+function adminReset(){adminPanel.hidden=true;adminEl('adminDetails').open=false;if(typeof orderAdminReset==='function')orderAdminReset();adminRole=null;if(typeof catalogReset==='function')catalogReset();adminEpoch++;adminRole=null;adminRevision=null;adminBusy=false;adminEl('adminBannerForm').hidden=true;adminEl('adminBannerForm').reset();[...adminEl('adminBannerForm').elements].forEach(x=>x.disabled=false);adminEl('adminPreview').hidden=true;adminEl('adminPreview').removeAttribute('src');adminEl('adminStatus').textContent='Увійди через Supabase для перевірки доступу.'}
 function adminDenied(e){return e?.code==='42501'||['401','403'].includes(String(e?.statusCode||e?.status||''))}
 function adminMessage(e){return e?.code==='40001'?'Банер уже змінено. Онови дані перед збереженням.':adminDenied(e)?'Доступ відсутній або відкликаний.':'Не вдалося виконати дію. Перевір з’єднання та налаштування Supabase, потім повтори.'}
 function adminImageUrl(value){try{if(/[\s\\<>"]/u.test(value))return '';const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
@@ -603,20 +604,21 @@ function adminPreview(){const url=adminImageUrl(adminEl('adminImage').value);adm
 async function adminLoad(){
  if(typeof catalogBusy!=='undefined'&&catalogBusy)return;
  if(typeof catalogReset==='function')catalogReset();
- const epoch=++adminEpoch;adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true;
+ const epoch=++adminEpoch;adminRole=null;adminRevision=null;adminPanel.hidden=true;adminEl('adminBannerForm').hidden=true;
  if(!CLOUD_MODE||!cloudClient||!cloudAccount){adminEl('adminStatus').textContent='Потрібен підтверджений вхід через Supabase (?cloud=1).';return}
  adminEl('adminStatus').textContent='Перевіряємо доступ…';
  try{
   const role=await cloudRpc('mk_admin_role');if(epoch!==adminEpoch)return;
   adminRole=role;
   if(!['owner','administrator'].includes(role)){adminEl('adminStatus').textContent=role==='seller'?'Роль продавця не дозволяє змінювати банери.':'Цей акаунт не має адміністративного доступу.';return}
+  adminPanel.hidden=false;
   const rows=await cloudRpc('mk_admin_banner_get');if(epoch!==adminEpoch)return;
   const row=rows?.[0];if(!row)throw new Error('Missing banner');
   adminRevision=row.revision;adminEl('adminTitle').value=row.title;adminEl('adminSubtitle').value=row.subtitle;
   adminEl('adminImage').value=row.image_url;adminEl('adminPublished').checked=row.published;adminEl('adminFile').value='';adminPreview();
   adminEl('adminBannerForm').hidden=false;adminEl('adminStatus').textContent='Доступ: '+(role==='owner'?'Owner':'Адміністратор')+'. '+(row.published?'Банер опубліковано.':'Банер приховано.');
   if(typeof catalogAdminLoad==='function')await catalogAdminLoad();if(typeof orderAdminLoad==='function')await orderAdminLoad();
- }catch(e){if(epoch===adminEpoch){adminRole=null;adminRevision=null;if(typeof catalogReset==='function')catalogReset();adminEl('adminStatus').textContent=adminMessage(e)}}
+ }catch(e){if(epoch===adminEpoch){adminPanel.hidden=true;adminRole=null;adminRevision=null;if(typeof catalogReset==='function')catalogReset();adminEl('adminStatus').textContent=adminMessage(e)}}
 }
 async function cloudLoadBanner(client=cloudClient){
  const epoch=++bannerEpoch;
@@ -651,7 +653,7 @@ adminEl('adminBannerForm').onsubmit=async e=>{
   const next=await cloudRpc('mk_admin_banner_save',{p_image_url:image,p_title:title,p_subtitle:subtitle,p_published:published,p_revision:revision});
   if(epoch!==adminEpoch)return;
   adminRevision=next;adminEl('adminImage').value=image;adminEl('adminFile').value='';adminPreview();adminEl('adminStatus').textContent=published?'Банер опубліковано.':'Збережено. Банер приховано.';await cloudLoadBanner();
- }catch(err){if(epoch===adminEpoch){adminEl('adminStatus').textContent=adminMessage(err);if(adminDenied(err)){adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true}}}
+ }catch(err){if(epoch===adminEpoch){adminEl('adminStatus').textContent=adminMessage(err);if(adminDenied(err)){adminPanel.hidden=true;adminRole=null;adminRevision=null;adminEl('adminBannerForm').hidden=true}}}
  finally{if(epoch===adminEpoch){adminBusy=false;controls.forEach(x=>x.disabled=false)}}
 };
 
@@ -888,4 +890,5 @@ window.addEventListener("storage",e=>{
 })();
 </script>
 </body></html>
+
 

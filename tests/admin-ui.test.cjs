@@ -13,10 +13,10 @@ function harness(rpc,storage){
 }
 const row={revision:3,title:'Banner',subtitle:'Text',image_url:'https://example.com/image.jpg',published:true};
 test('ordinary users and sellers cannot open editor',async()=>{
- for(const role of [null,'seller']){let calls=[];const h=harness(async name=>{calls.push(name);return role});await h.run('adminLoad()');assert.equal(h.el('adminBannerForm').hidden,true);assert.deepEqual(calls,['mk_admin_role'])}
+ for(const role of [null,'seller']){let calls=[];const h=harness(async name=>{calls.push(name);return role});await h.run('adminLoad()');assert.equal(h.el('adminBannerForm').hidden,true);assert.equal(h.run('adminPanel.hidden'),true);assert.deepEqual(calls,['mk_admin_role'])}
 });
 test('owner and administrator load draft with revision',async()=>{
- for(const role of ['owner','administrator']){const h=harness(async name=>name==='mk_admin_role'?role:[row]);await h.run('adminLoad()');assert.equal(h.el('adminTitle').value,'Banner');assert.equal(h.el('adminBannerForm').hidden,false);assert.equal(h.run('adminRevision'),3)}
+ for(const role of ['owner','administrator']){const h=harness(async name=>name==='mk_admin_role'?role:[row]);await h.run('adminLoad()');assert.equal(h.el('adminTitle').value,'Banner');assert.equal(h.el('adminBannerForm').hidden,false);assert.equal(h.run('adminRevision'),3);assert.equal(h.run('adminPanel.hidden'),false);h.run('adminReset()');assert.equal(h.run('adminPanel.hidden'),true)}
 });
 test('reset invalidates in-flight role response',async()=>{
  let resolve;const h=harness(()=>new Promise(r=>resolve=r));const pending=h.run('adminLoad()');h.run('adminReset()');resolve('owner');await pending;assert.equal(h.el('adminBannerForm').hidden,true);assert.equal(h.run('adminRole'),null);
@@ -91,3 +91,4 @@ test('closing and reopening editor retains unsaved text',async()=>{
  await h.run('adminLoad()');h.el('adminTitle').value='Unsaved title';h.el('adminDetails').open=true;h.el('adminDetails').ontoggle();
  assert.equal(calls,2);assert.equal(h.el('adminTitle').value,'Unsaved title');
 });
+
