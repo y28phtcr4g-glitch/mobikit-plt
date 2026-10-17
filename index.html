@@ -183,7 +183,7 @@ PRODUCTS.forEach(p=>{
   if(typeof p.sku!=="string")p.sku="";
   if(typeof p.warranty!=="string")p.warranty="Не вказано";
 });
-function isCatalogVisible(p){return !!p&&p.published===true&&p.status!=="archived"}
+function isCatalogVisible(p){return !!p&&p.published===true&&p.status!=="archived"&&categoryVisibility[p.category]?.hidden!==true}
 function visibleProducts(){return PRODUCTS.filter(isCatalogVisible)}
 function catalogIssues(){
   const seen=new Set(),issues=[];
@@ -272,6 +272,7 @@ async function toggleWait(id,key){if(CLOUD_MODE&&cloudPrefsBusy)return;const p=P
 function syncWaitButton(p,key){const b=document.getElementById("productModalWait"),s=demoStockFor(p,key);b.dataset.id=p.id;b.dataset.variantKey=key||"";b.hidden=s.stock>0;b.textContent=isWaiting(p.id,key)?"✓ Очікуєш появи":"⏳ Очікую появи"}
 
 function addCartProduct(id,key){const p=PRODUCTS.find(x=>x.id===id);if(!isCatalogVisible(p))return false;key=key||"";const variants=variantsFor(id);if(variants.length&&!variantByKey(id,key)){notify("Спочатку вибери доступний варіант товару 😼");return false}const s=demoStockFor(p,key);if(!s.orderable){notify(s.stock===1?"Остання одиниця залишається для фізичного магазину 😼🏪":"Цього варіанта зараз немає 😿");return false}const item=cart.find(x=>lineKey(x.id,x.variantKey)===lineKey(id,key)),q=item?item.qty:0;if(q+1>s.stock-1){notify("Більше цього варіанта зараз не можемо віддати в онлайн-замовлення 😼");return false}const prev=cart.map(x=>({...x}));if(item)item.qty++;else cart.push({id:id,qty:1,variantKey:key});if(!saveCart()){cart=prev;return false}renderCart();return true}
+const categoryVisibility={};
 const categoryNames={cases:"Чохли на телефон",speakers:"Портативні колонки",headphones:"Навушники",chargers:"Зарядні пристрої",holders:"Автотримачі",led:"Освітлення",projectors:"Проектори",styluses:"Стилуси",watches:"Смарт-годинники",powerbanks:"PowerBank",cables:"Кабелі",gadgets:"Гаджети",instantcameras:"Фотоапарати миттєвого друку",miniprinters:"Мініпринтери",fans:"Вентилятори",printing3d:"3D-друк"};
 const valid=["home","products","promos","account","cart","category"];
 let currentCategory="";
@@ -408,7 +409,7 @@ function renderCategory(){
 function openCategory(slug,push=true){
  currentCategory=slug;document.getElementById("categoryTitle").textContent=categoryNames[slug]||"Категорія";
  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById("category").classList.add("active");
- document.querySelectorAll("[data-page]").forEach(x=>x.classList.remove("active"));renderCategory();
+ document.querySelectorAll("[data-page]").forEach(x=>x.classList.remove("active"));renderCategory();renderCategoryVisibility();
  if(push)history.pushState(null,"","#category/"+slug);window.scrollTo(0,0);
 }
 function go(id,push=true){
@@ -664,7 +665,7 @@ let catalogRows=[],catalogOffers=[],catalogSelected=null,catalogBusy=false,catal
 function applyStorefront(data){
  if(!data||!Array.isArray(data.items)||!Array.isArray(data.promotions))throw new Error('Некоректний каталог сервера');
  storeLive=data.liveOrders===true;syncStoreMode();
- if(Array.isArray(data.categories))applyCategories(data.categories);
+ if(Array.isArray(data.categories))applyCategories(data.categories,true);
  const grouped=new Map();
  for(const row of data.items){
   if(!row.published||!categoryNames[row.category])continue;
@@ -720,8 +721,8 @@ function catalogAdminInit(){
  const categoryCreator=document.createElement('dialog');categoryCreator.id='categoryCreator';categoryCreator.hidden=true;categoryCreator.className='card';categoryCreator.append(adminEl('categoryCreateForm'));const categoryClose=document.createElement('button');categoryClose.className='btn alt';categoryClose.type='button';categoryClose.textContent='Закрити';categoryClose.onclick=()=>{if(!catalogBusy){categoryCreator.close();categoryCreator.hidden=true}};categoryCreator.append(categoryClose);document.body.append(categoryCreator);const addCategory=document.createElement('button');addCategory.id='categoryAddTile';addCategory.type='button';addCategory.className='cat-tile';addCategory.hidden=true;addCategory.innerHTML='<span class="cat-icon">＋</span><span class="cat-name">Додати категорію</span>';addCategory.onclick=()=>{categoryCreator.hidden=false;categoryCreator.showModal();adminEl('categoryCreateName').focus()};adminEl('products').querySelector('.category-grid').append(addCategory);
  adminEl('catalogClose').onclick=()=>{if(!catalogBusy){section.close();section.hidden=true;renderCategory()}};section.addEventListener('cancel',e=>{if(catalogBusy)e.preventDefault();else section.hidden=true});
  adminEl('catalogRemove').onclick=catalogRemoveProduct;
- const tools=document.createElement('div');tools.id='categoryAdminTools';tools.hidden=true;tools.className='buttons';tools.innerHTML='<button class="btn" id="categoryAddProduct" type="button">Додати товар у категорію</button><span class="muted">Натисни на товар, щоб змінити опис, ціну чи фото. Прибрані товари видно лише адміністрації.</span>';adminEl('category').querySelector('.category-toolbar').after(tools);
- adminEl('categoryAddProduct').onclick=()=>catalogOpenEditor(null,currentCategory);
+ const tools=document.createElement('div');tools.id='categoryAdminTools';tools.hidden=true;tools.className='buttons';tools.innerHTML='<button class="btn" id="categoryAddProduct" type="button">Додати товар у категорію</button><button class="btn alt" id="categoryVisibilityToggle" type="button" hidden>Приховати категорію</button><p id="categoryVisibilityStatus" role="status"></p><span class="muted">Натисни на товар, щоб змінити опис, ціну чи фото. Прибрані товари видно лише адміністрації.</span>';adminEl('category').querySelector('.category-toolbar').after(tools);
+ adminEl('categoryAddProduct').onclick=()=>catalogOpenEditor(null,currentCategory);adminEl('categoryVisibilityToggle').onclick=categoryToggleVisibility;
  adminEl('catalogCategory').innerHTML=Object.entries(categoryNames).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
  adminEl('catalogNew').onclick=()=>catalogOpenEditor(null);
  adminEl('categoryCreateForm').onsubmit=categoryCreate;
@@ -733,14 +734,14 @@ function catalogAdminInit(){
  adminEl('catalogForm').onsubmit=catalogSave;
  adminEl('promotionForm').onsubmit=promotionSave;
 }
-function catalogReset(){catalogEpoch++;catalogRows=[];catalogOffers=[];catalogSelected=null;catalogBusy=false;const el=adminEl('catalogAdmin');if(!el)return;el.close();el.hidden=true;adminEl('categoryCreator').close();adminEl('categoryCreator').hidden=true;adminEl('categoryAddTile').hidden=true;if(adminEl('categoryAdminTools'))adminEl('categoryAdminTools').hidden=true;renderCategory();renderPromos();adminEl('catalogForm').reset();adminEl('promotionForm').reset();adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogSelect').innerHTML='';adminEl('catalogPreview').hidden=true;adminEl('catalogPreview').removeAttribute('src');catalogControls(false)}
+function catalogReset(){catalogEpoch++;catalogRows=[];catalogOffers=[];catalogSelected=null;catalogBusy=false;const el=adminEl('catalogAdmin');if(!el)return;el.close();el.hidden=true;adminEl('categoryCreator').close();adminEl('categoryCreator').hidden=true;adminEl('categoryAddTile').hidden=true;if(adminEl('categoryAdminTools'))adminEl('categoryAdminTools').hidden=true;renderCategoryVisibility();renderCategory();renderPromos();adminEl('catalogForm').reset();adminEl('promotionForm').reset();adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogSelect').innerHTML='';adminEl('catalogPreview').hidden=true;adminEl('catalogPreview').removeAttribute('src');catalogControls(false)}
 function catalogControls(busy){for(const id of ['catalogForm','promotionForm','categoryCreateForm'])for(const control of adminEl(id).elements)control.disabled=busy;for(const id of ['catalogNew','catalogRefresh','catalogSelect','catalogSearch'])adminEl(id).disabled=busy}
 function catalogError(e){return e?.code==='40001'?'Дані вже змінилися. Скопіюй незбережений текст або адресу фото й натисни «Оновити список», потім вибери товар повторно.':adminDenied(e)?'Доступ відсутній або відкликаний.':e?.code==='22023'?'Перевір поля. Залишок має покривати резерви та останню одиницю магазину.':'Не вдалося зберегти. Перевір з’єднання та повтори.'}
 async function catalogAdminLoad(){
  if(catalogBusy)return;const epoch=++catalogEpoch;catalogSelected=null;adminEl('catalogForm').hidden=true;adminEl('promotionForm').hidden=true;adminEl('catalogAdmin').hidden=true;
  if(!['owner','administrator'].includes(adminRole)||!cloudAccount)return;
  adminEl('categoryAddTile').hidden=false;adminEl('categoryAdminTools').hidden=false;renderCategory();renderPromos();adminEl('catalogStatus').textContent='Завантажуємо каталог…';
- try{const [rows,offers]=await Promise.all([cloudRpc('mk_admin_catalog_list'),cloudRpc('mk_admin_promotions')]);if(epoch!==catalogEpoch)return;if(!Array.isArray(rows)||!Array.isArray(offers))throw new Error('Invalid response');catalogRows=rows;catalogOffers=offers;catalogRenderList();renderCategory();adminEl('catalogStatus').textContent='Доступно варіантів: '+rows.length+'. Вибери товар або додай новий.'}
+ try{const [rows,offers]=await Promise.all([cloudRpc('mk_admin_catalog_list'),cloudRpc('mk_admin_promotions')]);if(epoch!==catalogEpoch)return;if(!Array.isArray(rows)||!Array.isArray(offers))throw new Error('Invalid response');catalogRows=rows;catalogOffers=offers;catalogRenderList();renderCategory();renderCategoryVisibility();adminEl('catalogStatus').textContent='Доступно варіантів: '+rows.length+'. Вибери товар або додай новий.'}
  catch(e){if(epoch===catalogEpoch){adminEl('catalogStatus').textContent=catalogError(e);if(adminDenied(e))catalogReset()}}
 }
 function catalogRenderList(){const query=adminEl('catalogSearch').value.toLocaleLowerCase();adminEl('catalogSelect').innerHTML=catalogRows.map((r,i)=>({r,i})).filter(({r})=>(!catalogSelected||r.product_id===catalogSelected.product_id)&&(r.name+' '+r.product_id+' '+r.variant).toLocaleLowerCase().includes(query)).map(({r,i})=>'<option value="'+i+'">'+esc(r.name+(r.variant?' · '+r.variant:'')+' — '+r.price+' грн · '+r.stock+' шт. · '+(r.published?'Опубліковано':'Чернетка'))+'</option>').join('')}
@@ -788,12 +789,27 @@ async function promotionSave(e){
 }
 
 
-function applyCategories(rows){
+function applyCategories(rows,replace=false){
+ if(replace)for(const id of Object.keys(categoryNames))categoryVisibility[id]={hidden:!rows.some(r=>r.id===id)};
+ for(const row of rows)categoryVisibility[row.id]={hidden:row.hidden===true,revision:row.revision};
  for(const row of rows)if(typeof row.id==='string'&&/^[a-z][a-z0-9_-]{0,119}$/.test(row.id)&&typeof row.name==='string')categoryNames[row.id]=row.name;
  const grid=adminEl('products').querySelector('.category-grid');
  for(const row of rows){if(!Object.hasOwn(categoryNames,row.id))continue;let tile=[...grid.querySelectorAll('[data-category]')].find(x=>x.dataset.category===row.id);if(!tile){tile=document.createElement('button');tile.type='button';tile.className='cat-tile';tile.dataset.category=row.id;tile.innerHTML='<span class="cat-icon">📦</span><span class="cat-name"></span><span class="cat-arrow">Відкрити →</span>';grid.append(tile)}tile.querySelector('.cat-name').textContent=row.name;tile.onclick=()=>openCategory(row.id)}
  const select=adminEl('catalogCategory');if(select){const value=select.value;select.innerHTML=Object.entries(categoryNames).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');if(Object.hasOwn(categoryNames,value))select.value=value}
  if(currentCategory)adminEl('categoryTitle').textContent=categoryNames[currentCategory]||'Категорія';
+ renderCategoryVisibility();
+}
+function renderCategoryVisibility(){
+ const managed=['owner','administrator'].includes(adminRole);
+ for(const tile of adminEl('products').querySelectorAll('[data-category]')){const state=categoryVisibility[tile.dataset.category];tile.hidden=state?.hidden===true&&!managed;const arrow=tile.querySelector('.cat-arrow');if(arrow)arrow.textContent=state?.hidden?'Приховано · Відкрити →':'Відкрити →'}
+ const toggle=adminEl('categoryVisibilityToggle');if(toggle){const state=categoryVisibility[currentCategory];toggle.hidden=!managed||!Number.isInteger(state?.revision);toggle.textContent=state?.hidden?'Повернути категорію на сайт':'Приховати категорію';toggle.disabled=catalogBusy}
+}
+async function categoryToggleVisibility(){
+ const id=currentCategory,state=categoryVisibility[id];if(catalogBusy||!['owner','administrator'].includes(adminRole)||!Number.isInteger(state?.revision))return;
+ const epoch=catalogEpoch,user=cloudAccount?.profileId;catalogBusy=true;catalogControls(true);renderCategoryVisibility();adminEl('categoryVisibilityStatus').textContent='Зберігаємо…';
+ try{const row=await cloudRpc('mk_admin_category_visibility',{p_id:id,p_hidden:!state.hidden,p_revision:state.revision});if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;applyCategories([row]);await refreshStorefront();adminEl('categoryVisibilityStatus').textContent=row.hidden?'Категорію та її товари приховано від покупців. Усі дані збережено.':'Категорія знову доступна покупцям.'}
+ catch(e){if(epoch===catalogEpoch){adminEl('categoryVisibilityStatus').textContent=e?.code==='40001'?'Категорію вже змінено. Онови сторінку та повтори.':catalogError(e);if(adminDenied(e)){catalogReset();adminReset()}}}
+ finally{if(epoch===catalogEpoch){catalogBusy=false;catalogControls(false);renderCategoryVisibility()}}
 }
 async function categoryCreate(e){
  e.preventDefault();if(catalogBusy||!['owner','administrator'].includes(adminRole))return;
