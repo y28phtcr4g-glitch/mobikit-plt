@@ -509,7 +509,8 @@ document.getElementById("reviewForm").addEventListener("submit",e=>{e.preventDef
 async function cloudRpc(name,args={}){
  const result=await cloudClient.rpc(name,args);if(result.error)throw result.error;return result.data;
 }
-function cloudError(e){const raw=String(e?.message||"");const msg=/rate limit|too many requests/i.test(raw)?"Забагато запитів на вхід. Зачекай трохи й спробуй ще раз.":/expired|otp_expired/i.test(raw)?"Посилання для входу вже недійсне. Запроси нове.":/network|fetch|timeout/i.test(raw)?"Не вдалося з’єднатися із сервером. Перевір інтернет і спробуй ще раз.":raw||"З’єднання перервано. Спробуй ще раз.";notify(msg)}
+function cloudError(e){const raw=String(e?.message||e||"");const msg=/rate limit|too many requests/i.test(raw)?"Забагато запитів на вхід. Зачекай трохи й спробуй ще раз.":/expired|otp_expired/i.test(raw)?"Посилання для входу вже недійсне. Запроси нове.":/failed to fetch|load failed|networkerror|network request failed|fetch|timeout|failed to load supabase/i.test(raw)?"Не вдалося з’єднатися із сервісом авторизації. Перевір інтернет або спробуй відкрити сайт в іншій мережі.":raw||"З’єднання перервано. Спробуй ще раз.";notify(msg)}
+async function loadSupabaseClientLibrary(){let lastError;for(const url of ["https://esm.sh/@supabase/supabase-js@2.117.2","https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm"]){try{return await import(url)}catch(error){lastError=error}}throw new Error("Failed to load Supabase client library: "+String(lastError?.message||lastError||"unknown error"))}
 function cloudReceipts(){try{const x=JSON.parse(localStorage.getItem("mobikitCloudReceipts")||"[]");return Array.isArray(x)?x.filter(r=>r&&typeof r.request==="string"&&typeof r.token==="string").slice(-50):[]}catch(e){return[]}}
 async function cloudLoadOrders(){
  const owner=cloudAccount?.profileId||"guest";let orders;
@@ -895,7 +896,7 @@ if(CLOUD_MODE){
  document.getElementById("demoLogout").onclick=async()=>{try{await cloudReady;const r=await cloudClient.auth.signOut();if(r.error)throw r.error;await cloudRestore(null);setAuthMode("login")}catch(e){cloudError(e)}};
  renderAccount();
  cloudReady=(async()=>{
-  const {createClient}=await import("https://esm.sh/@supabase/supabase-js@2.117.2");
+  const {createClient}=await loadSupabaseClientLibrary();
   cloudClient=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});
   const callbackCode=new URLSearchParams(location.search).get("code");
   if(callbackCode){const exchanged=await cloudClient.auth.exchangeCodeForSession(callbackCode);if(exchanged.error)throw exchanged.error;history.replaceState(null,"",location.pathname+"?cloud=1&qa=cloud")}
@@ -911,7 +912,7 @@ if(CLOUD_MODE){
 
 
 if(!CLOUD_MODE){
- import("https://esm.sh/@supabase/supabase-js@2.117.2").then(async({createClient})=>{const publicClient=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});await Promise.all([cloudLoadBanner(publicClient),refreshStorefront(publicClient)]);}).catch(()=>{adminEl("promoBanner").hidden=true});
+ loadSupabaseClientLibrary().then(async({createClient})=>{const publicClient=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});await Promise.all([cloudLoadBanner(publicClient),refreshStorefront(publicClient)]);}).catch(()=>{adminEl("promoBanner").hidden=true});
 }
 setInterval(()=>{if(cloudClient&&!document.hidden&&!catalogBusy)refreshStorefront().catch(()=>{})},60000);
 window.addEventListener("storage",e=>{
