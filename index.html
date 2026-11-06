@@ -531,7 +531,7 @@ async function cloudRestore(session){
   if(version!==cloudAuthVersion)return;
   try{localStorage.setItem("mobikitCloudPreview","1")}catch(e){}cloudAccount=cloudProfile(response.data,user);cloudFavorites=Array.isArray(response.data.favorites)?response.data.favorites.slice(0,100).filter(id=>typeof id==="string"&&PRODUCTS.some(p=>p.id===id&&isCatalogVisible(p))):[];cloudWaiting=Array.isArray(response.data.waiting)?response.data.waiting.slice(0,100).filter(storedRecord):[];
  }
- if(version!==cloudAuthVersion)return;renderAccount();await adminLoad();await cloudLoadOrders();
+ if(version!==cloudAuthVersion)return;renderAccount();try{await adminLoad()}catch(e){console.warn("Admin data unavailable",e)}try{await cloudLoadOrders()}catch(e){console.warn("Orders unavailable",e)}
 }
 async function cloudSaveProfile(a){
  const owner=cloudAccount?.profileId;if(!owner||a.profileId!==owner)return false;
@@ -901,7 +901,7 @@ if(CLOUD_MODE){
   const callbackCode=new URLSearchParams(location.search).get("code");
   if(callbackCode){const exchanged=await cloudClient.auth.exchangeCodeForSession(callbackCode);if(exchanged.error)throw exchanged.error;history.replaceState(null,"",location.pathname+"?cloud=1&qa=cloud")}
   const r=await cloudClient.auth.getSession();if(r.error)throw r.error;
-  await cloudRestore(r.data.session);await cloudLoadCatalog();await cloudLoadBanner();
+  await cloudRestore(r.data.session);cloudLoadCatalog().catch(e=>console.warn("Catalog unavailable",e));cloudLoadBanner().catch(e=>console.warn("Banner unavailable",e));
   cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"||event==="SIGNED_IN"||event==="USER_UPDATED")setTimeout(()=>cloudRestore(session).catch(cloudError),0)});
   if(r.data.session)go("account");return cloudClient;
  })();
