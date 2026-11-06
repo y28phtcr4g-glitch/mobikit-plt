@@ -898,12 +898,15 @@ if(CLOUD_MODE){
  cloudReady=(async()=>{
   const {createClient}=await loadSupabaseClientLibrary();
   cloudClient=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})}});
-  const callbackCode=new URLSearchParams(location.search).get("code");
-  if(callbackCode){const exchanged=await cloudClient.auth.exchangeCodeForSession(callbackCode);if(exchanged.error)throw exchanged.error;history.replaceState(null,"",location.pathname+"?cloud=1&qa=cloud")}
-  const r=await cloudClient.auth.getSession();if(r.error)throw r.error;
-  await cloudRestore(r.data.session);cloudLoadCatalog().catch(e=>console.warn("Catalog unavailable",e));cloudLoadBanner().catch(e=>console.warn("Banner unavailable",e));
   cloudClient.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"||event==="SIGNED_IN"||event==="USER_UPDATED")setTimeout(()=>cloudRestore(session).catch(cloudError),0)});
-  if(r.data.session)go("account");return cloudClient;
+  (async()=>{
+   const callbackCode=new URLSearchParams(location.search).get("code");
+   if(callbackCode){const exchanged=await cloudClient.auth.exchangeCodeForSession(callbackCode);if(exchanged.error)throw exchanged.error;history.replaceState(null,"",location.pathname+"?cloud=1&qa=cloud")}
+   const r=await cloudClient.auth.getSession();if(r.error)throw r.error;
+   await cloudRestore(r.data.session);cloudLoadCatalog().catch(e=>console.warn("Catalog unavailable",e));cloudLoadBanner().catch(e=>console.warn("Banner unavailable",e));
+   if(r.data.session)go("account");
+  })().catch(cloudError);
+  return cloudClient;
  })();
  cloudReady.catch(cloudError);
  setInterval(()=>{if(document.getElementById("account").classList.contains("active"))cloudReady.then(()=>cloudLoadOrders()).catch(cloudError)},60000);
