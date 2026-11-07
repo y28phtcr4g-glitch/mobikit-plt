@@ -136,6 +136,29 @@ where id in(select (payload->>'serverId')::uuid from qa_catalog_order);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000092',true);
 select public.mk_admin_catalog_save(pg_temp.item('black',0,false),3);
+do $
+declare saved jsonb; item jsonb; row_data public.mk_catalog_items;
+begin
+ item := pg_temp.item('black',0,false) || jsonb_build_object(
+   'category','gadgets','description','Gallery test',
+   'photos',jsonb_build_array('https://example.com/front.jpg','https://example.com/back.jpg'));
+ saved := public.mk_admin_product_save(item,4);
+ select * into row_data from public.mk_catalog_items
+  where product_id='qa-catalog' and variant_key='black';
+ if jsonb_array_length(row_data.photos)<>2
+    or row_data.photo<>'https://example.com/front.jpg'
+    or row_data.photos->>1<>'https://example.com/back.jpg'
+    or saved->'photos'<>row_data.photos then
+   raise exception 'Product photo gallery was not saved';
+ end if;
+ begin
+   perform public.mk_admin_product_save(
+     item || jsonb_build_object('photos',to_jsonb(array_fill('https://example.com/a.jpg'::text,ARRAY[11]))),5);
+   raise exception 'More than 10 product photos were accepted';
+ exception when raise_exception then
+   if sqlerrm='More than 10 product photos were accepted' then raise; end if;
+ end;
+end $;
 reset role;
 -- Owner can edit live inventory; browser cannot alter its mode.
 update public.mk_catalog_items set is_demo=false where product_id='qa-catalog' and variant_key='black';
