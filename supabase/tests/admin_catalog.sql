@@ -155,8 +155,8 @@ begin
    perform public.mk_admin_product_save(
      item || jsonb_build_object('photos',to_jsonb(array_fill('https://example.com/a.jpg'::text,ARRAY[11]))),5);
    raise exception 'More than 10 product photos were accepted';
- exception when raise_exception then
-   if sqlerrm='More than 10 product photos were accepted' then raise; end if;
+ exception when sqlstate '22023' then
+   null;
  end;
 end $;
 reset role;
