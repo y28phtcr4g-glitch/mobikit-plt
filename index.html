@@ -662,7 +662,7 @@ adminEl('adminBannerForm').onsubmit=async e=>{
 };
 
 // Catalog editor and storefront share the server's canonical variant records.
-let catalogRows=[],catalogOffers=[],catalogSelected=null,catalogBusy=false,catalogEpoch=0,storefrontEpoch=0;
+let catalogRows=[],catalogOffers=[],catalogSelected=null,catalogBusy=false,catalogEpoch=0,storefrontEpoch=0,catalogPhotosDraft=[];
 function applyStorefront(data){
  if(!data||!Array.isArray(data.items)||!Array.isArray(data.promotions))throw new Error('Некоректний каталог сервера');
  storeLive=data.liveOrders===true;syncStoreMode();
@@ -676,8 +676,8 @@ function applyStorefront(data){
  const old=new Map(PRODUCTS.map(p=>[p.id,p]));const next=[];
  for(const [id,rows] of grouped){
   const base=rows.find(r=>r.variant_key==='')||rows[0],prev=old.get(id)||{};
-  next.push({...prev,id,category:base.category,name:base.name,desc:base.description||'',price:Number(base.price),photo:adminImageUrl(base.photo),warranty:base.warranty||'',published:true,status:'active',icon:prev.icon||'📦',popularity:prev.popularity||0,createdAt:prev.createdAt||new Date().toISOString()});
-  DEMO_VARIANTS[id]=rows.length===1&&!base.variant_key?[]:rows.map(r=>({key:r.variant_key,options:r.variant||'Основний',stock:Number(r.available),price:Number(r.price),photo:adminImageUrl(r.photo),name:r.name,desc:r.description||''}));
+  next.push({...prev,id,category:base.category,name:base.name,desc:base.description||'',price:Number(base.price),photo:adminImageUrl((base.photos||[])[0]||base.photo),photos:(Array.isArray(base.photos)?base.photos:[base.photo].filter(Boolean)).map(adminImageUrl),warranty:base.warranty||'',published:true,status:'active',icon:prev.icon||'📦',popularity:prev.popularity||0,createdAt:prev.createdAt||new Date().toISOString()});
+  DEMO_VARIANTS[id]=rows.length===1&&!base.variant_key?[]:rows.map(r=>({key:r.variant_key,options:r.variant||'Основний',stock:Number(r.available),price:Number(r.price),photo:adminImageUrl((r.photos||[])[0]||r.photo),photos:(Array.isArray(r.photos)?r.photos:[r.photo].filter(Boolean)).map(adminImageUrl),name:r.name,desc:r.description||''}));
   DEMO_PRODUCT_STOCK[id]=Number(base.available);
  }
  for(const id of Object.keys(DEMO_VARIANTS))if(!grouped.has(id))delete DEMO_VARIANTS[id];
@@ -705,10 +705,11 @@ function catalogAdminInit(){
  <label>Фізичний залишок, шт.<input id="catalogStock" type="number" min="0" max="1000000" step="1" required></label>
  <p id="catalogReserved" class="muted"></p>
  <label>Гарантія<input id="catalogWarranty" maxlength="500"></label>
- <label>Фото — HTTPS адреса<input id="catalogPhoto" type="url" maxlength="2000"></label>
- <label>Завантажити фото (JPEG, PNG, WebP; до 5 МБ)<input id="catalogFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
- <p class="muted">Фото товарів публічні, зокрема для чернеток.</p>
- <img id="catalogPreview" alt="Фото товару" hidden>
+ <label>Головне фото — HTTPS адреса<input id="catalogPhoto" type="url" maxlength="2000"></label>
+ <label>Додати фото (JPEG, PNG, WebP; кожне до 5 МБ, максимум 10)<input id="catalogFile" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+ <p class="muted">До 10 публічних фото на варіант. Натисни «Зробити головним» або «Прибрати» під мініатюрою.</p>
+ <div id="catalogPhotoGallery" class="catalog-photo-gallery" aria-live="polite"></div>
+ <img id="catalogPreview" alt="Головне фото товару" hidden>
  <label class="admin-publish"><input id="catalogPublished" type="checkbox"> Показувати цей варіант у каталозі</label>
  <div class="buttons"><button class="btn" type="submit">Зберегти товар</button><button class="btn alt" id="catalogAddVariant" type="button">Додати варіант цього товару</button><button class="btn alt" id="catalogRemove" type="button">Прибрати товар з каталогу</button></div>
  </form>
@@ -750,6 +751,7 @@ function catalogEdit(row){
  if(catalogBusy)return;catalogSelected=row?{...row}:{product_id:'product-'+crypto.randomUUID(),variant_key:'',revision:null,category:'gadgets',name:'',description:'',variant:'',price:0,stock:0,warranty:'',photo:'',published:false};
  const r=catalogSelected;catalogRenderList();const selectedIndex=catalogRows.findIndex(x=>x.product_id===r.product_id&&x.variant_key===r.variant_key);adminEl('catalogSelect').value=String(selectedIndex);adminEl('catalogSelect').parentElement.hidden=selectedIndex<0;adminEl('catalogRemove').hidden=r.revision==null;adminEl('catalogForm').reset();
  for(const [field,key] of Object.entries({Name:'name',Category:'category',Description:'description',Variant:'variant',Price:'price',Stock:'stock',Warranty:'warranty',Photo:'photo'}))adminEl('catalog'+field).value=r[key]??'';
+ catalogPhotosDraft=Array.isArray(r.photos)?r.photos.slice(0,10):(r.photo?[r.photo]:[]);catalogRenderPhotos();
  adminEl('catalogPublished').checked=!!r.published;adminEl('catalogPublished').disabled=r.revision==null;
  adminEl('catalogIdentity').textContent=r.revision==null?'Новий товар / варіант: спочатку збережи чернетку.':'Код: '+r.product_id+(r.variant_key?' / '+r.variant_key:'');
  adminEl('catalogReserved').textContent=r.orderable==null?'Онови список, щоб перевірити актуальні резерви й доступний залишок.':'Зарезервовано: '+(r.reserved||0)+'. Доступно онлайн: '+r.orderable+'.';
@@ -759,18 +761,21 @@ function catalogEdit(row){
  const local=value=>value?new Date(new Date(value).getTime()-new Date(value).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
  adminEl('promotionStart').value=local(offer?.start_at);adminEl('promotionEnd').value=local(offer?.end_at);
 }
+function catalogRenderPhotos(){const root=adminEl('catalogPhotoGallery');if(!root)return;root.innerHTML=catalogPhotosDraft.map((url,i)=>'<div class="catalog-photo-thumb"><img src="'+esc(url)+'" alt="Фото '+(i+1)+'"><div class="buttons"><button type="button" class="btn alt" data-photo-primary="'+i+'" '+(i===0?'disabled':'')+'>Зробити головним</button><button type="button" class="btn alt" data-photo-remove="'+i+'">Прибрати</button></div></div>').join('')||'<p class="muted">Фото ще не додані.</p>';root.querySelectorAll('[data-photo-primary]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.photoPrimary);const [url]=catalogPhotosDraft.splice(i,1);catalogPhotosDraft.unshift(url);adminEl('catalogPhoto').value=url;catalogRenderPhotos();catalogPreview()});root.querySelectorAll('[data-photo-remove]').forEach(b=>b.onclick=()=>{catalogPhotosDraft.splice(Number(b.dataset.photoRemove),1);adminEl('catalogPhoto').value=catalogPhotosDraft[0]||'';catalogRenderPhotos();catalogPreview()})}
 function catalogPreview(){const image=adminImageUrl(adminEl('catalogPhoto').value);adminEl('catalogPreview').hidden=!image;if(image)adminEl('catalogPreview').src=image;else adminEl('catalogPreview').removeAttribute('src')}
 async function catalogSave(e){
  e.preventDefault();if(catalogBusy||!catalogSelected||!['owner','administrator'].includes(adminRole))return;
  const r={...catalogSelected},epoch=catalogEpoch,user=cloudAccount?.profileId;
  const item={product_id:r.product_id,variant_key:r.variant_key,name:adminEl('catalogName').value.trim(),category:adminEl('catalogCategory').value,description:adminEl('catalogDescription').value,variant:adminEl('catalogVariant').value,warranty:adminEl('catalogWarranty').value,photo:adminEl('catalogPhoto').value.trim(),price:Number(adminEl('catalogPrice').value),stock:Number(adminEl('catalogStock').value),published:r.revision==null?false:adminEl('catalogPublished').checked};
- const file=adminEl('catalogFile').files[0],types={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
- if(!item.name||!Number.isFinite(item.price)||item.price<0||Math.round(item.price*100)/100!==item.price||!Number.isInteger(item.stock)||item.stock<0||(item.photo&&!adminImageUrl(item.photo))||file&&(!types[file.type]||!file.size||file.size>5242880)){adminEl('catalogStatus').textContent='Перевір назву, ціну, залишок і фото (JPEG/PNG/WebP до 5 МБ).';return}
+ const files=Array.from(adminEl('catalogFile').files||[]),types={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+ const primary=item.photo?adminImageUrl(item.photo):'';let photos=catalogPhotosDraft.slice();if(primary){photos=photos.filter(x=>x!==primary);photos.unshift(primary)}else if(photos.length){item.photo=photos[0]}
+ if(!item.name||!Number.isFinite(item.price)||item.price<0||Math.round(item.price*100)/100!==item.price||!Number.isInteger(item.stock)||item.stock<0||(item.photo&&!adminImageUrl(item.photo))||files.some(file=>!types[file.type]||!file.size||file.size>5242880)||photos.length+files.length>10){adminEl('catalogStatus').textContent='Перевір назву, ціну, залишок і фото. Дозволено до 10 фото JPEG/PNG/WebP, кожне до 5 МБ.';return}
  catalogBusy=true;catalogControls(true);adminEl('catalogStatus').textContent='Зберігаємо товар…';
  try{
-  if(file){const path='weekly/'+user+'/'+crypto.randomUUID()+'.'+types[file.type];const upload=await cloudClient.storage.from('mk-banners').upload(path,file,{upsert:false,contentType:file.type});if(upload.error)throw upload.error;item.photo=cloudClient.storage.from('mk-banners').getPublicUrl(path).data.publicUrl}
+  for(const file of files){const path='weekly/'+user+'/'+crypto.randomUUID()+'.'+types[file.type];const upload=await cloudClient.storage.from('mk-banners').upload(path,file,{upsert:false,contentType:file.type});if(upload.error)throw upload.error;photos.push(cloudClient.storage.from('mk-banners').getPublicUrl(path).data.publicUrl)}
+  item.photos=photos.slice(0,10);item.photo=item.photos[0]||'';
   if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;
-  if(file){adminEl('catalogPhoto').value=item.photo;adminEl('catalogFile').value='';catalogPreview()}
+  adminEl('catalogPhoto').value=item.photo;catalogPhotosDraft=item.photos.slice();adminEl('catalogFile').value='';catalogRenderPhotos();catalogPreview();
   const saved=await cloudRpc('mk_admin_product_save',{p_item:item,p_revision:r.revision});if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;
   const i=catalogRows.findIndex(x=>x.product_id===saved.product_id&&x.variant_key===saved.variant_key);if(i<0)catalogRows.push(saved);else catalogRows[i]=saved;
   catalogBusy=false;catalogControls(false);catalogRenderList();catalogEdit(saved);adminEl('catalogStatus').textContent=saved.published?'Товар збережено й опубліковано.':'Чернетку збережено. Увімкни «Показувати», щоб опублікувати.';
