@@ -833,7 +833,7 @@ async function catalogRemoveProduct(){
  adminEl('catalogStatus').textContent='Прибираємо товар з каталогу…';
  try{for(const row of catalogRows.filter(r=>r.product_id===id&&r.published)){
   if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;
-  const saved=await cloudRpc('mk_admin_product_save',{p_item:Object.fromEntries(['product_id','variant_key','name','category','description','variant','price','stock','warranty','photo','published'].map(k=>[k,k==='published'?false:row[k]])),p_revision:row.revision});
+  const saved=await cloudRpc('mk_admin_product_save',{p_item:Object.fromEntries(['product_id','variant_key','name','category','description','variant','price','stock','warranty','photo','photos','published'].map(k=>[k,k==='published'?false:row[k]])),p_revision:row.revision});
   if(epoch!==catalogEpoch||user!==cloudAccount?.profileId)return;
   const i=catalogRows.findIndex(r=>r.product_id===saved.product_id&&r.variant_key===saved.variant_key);catalogRows[i]=saved;
  }
