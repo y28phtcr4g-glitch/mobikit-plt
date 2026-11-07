@@ -37,6 +37,12 @@ end $$;
 5. Inspect existing Storage policies: broad permissive policies from earlier manual setup can also grant access. The new restrictive guards constrain even broad legacy permissive policies for `mk-banners`: only role-checked inserts into the current user’s path are allowed; browser update/delete/list are blocked. Other buckets keep their existing rules. Public image URLs remain readable by design. Verify the bucket size/MIME restrictions.
 6. In a disposable Supabase test project, run `supabase/tests/admin_banners.sql` after all migrations (transaction rolls back). Then verify real uploads with Owner/administrator and rejection for customer/seller, logout, role revocation, concurrent edits, and anonymous published/hidden rendering. Remove production Owner membership only deliberately through trusted SQL; never trust a hidden UI as access enforcement.
 
+## Product photo gallery
+
+Migration `202611070001_product_photo_gallery.sql` adds a `photos` JSON array to each catalog variant and backfills existing `photo` URLs as the first gallery image. The legacy `photo` column remains the primary-image compatibility field. The admin editor accepts up to 10 JPEG, PNG, or WebP files (each up to 5 MiB) and HTTPS image URLs; the storefront displays the first image on cards and the complete gallery in product details. Gallery entries are public because the existing `mk-banners` bucket serves public product images.
+
+Apply this migration **after all earlier migrations**, in particular after `202610150002_categories.sql`. It does not need to be run again if already applied. The code changes alone do not alter the live database; the migration must be applied to the correct Supabase project before the gallery can save.
+
 ## Local checks
 
 Run `node --test tests/admin-ui.test.cjs`. This checks store JavaScript syntax and editor behavior with mocked DOM/RPC: denied roles, role loading, stale auth responses, missing migration, unsafe URLs, conflict handling, and revoked access. These tests do not substitute for database RLS tests or real browser/Storage verification. No live database credentials are required or stored.
