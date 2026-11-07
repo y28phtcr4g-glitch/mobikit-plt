@@ -41,7 +41,7 @@ end $$;
 
 Migration `202611070001_product_photo_gallery.sql` adds a `photos` JSON array to each catalog variant and backfills existing `photo` URLs as the first gallery image. The legacy `photo` column remains the primary-image compatibility field. The admin editor accepts up to 10 JPEG, PNG, or WebP files (each up to 5 MiB) and HTTPS image URLs; the storefront displays the first image on cards and the complete gallery in product details. Gallery entries are public because the existing `mk-banners` bucket serves public product images.
 
-Apply this migration **after all earlier migrations**, in particular after `202610150002_categories.sql`. It does not need to be run again if already applied. The code changes alone do not alter the live database; the migration must be applied to the correct Supabase project before the gallery can save.
+Apply this migration **after all earlier migrations**, including `202610150003_order_management.sql`. It does not need to be run again if already applied. The code changes alone do not alter the live database; the migration must be applied to the correct Supabase project before the gallery can save.
 
 ## Local checks
 
